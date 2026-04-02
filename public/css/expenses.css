@@ -1,0 +1,79 @@
+body{
+    background-color: peachpuff;
+}
+
+button.big-text {
+  font-size: 16px;
+}
+
+.top-left,
+.top-right {
+    position: fixed;
+    top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.top-left {
+    left: 10px;
+}
+
+.top-right {
+    right: 10px;
+}
+
+.top-left iframe {
+    border: none;
+}
+
+
+#chime {
+    background: none;
+}
+
+#watch{
+    font-size: 20px;
+    text-align: center;
+}
+
+#openPage{
+    position: fixed; /* 画面に対して固定 */
+    top: 0;
+    right: 0;
+    margin: 10px; /* 端から少し余白を取りたい場合 */
+}
+
+#buttonBar {
+    justify-content: center;
+    display: flex;
+    gap: 10px; /* ボタン間のスペース */
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 12px;
+}
+
+table, th, td {
+    border: 2px solid black;
+    background-color: #f2f2f2;
+    border-collapse: collapse;
+    padding: 5px;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+input, select, button {
+    margin: 3px;
+}
+
+button {
+    padding: 4px 8px;
+}
+
+#buttonBar {
+    margin-top: 10px;
+}
