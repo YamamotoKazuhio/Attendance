@@ -15,7 +15,8 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return view('welcome');
+    //return view('welcome');
+    return view('top_page');
 });
 
 // マニュアル表示用ルーティング
@@ -101,6 +102,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // 社員情報一覧
         Route::get('/admin/users', [UserDetailController::class, 'adminIndex'])->name('admin.users.index');
         Route::delete('/admin/users/{user}', [UserDetailController::class, 'destroy'])->name('admin.users.destroy');
+
+        // 管理者専用の登録画面表示（標準のRegisterControllerを利用）
+        Route::get('/admin/register', [App\Http\Controllers\Auth\RegisteredUserController::class, 'create'])->name('admin.register');
 
         // 論理削除からの復元
         // 削除済みのユーザーを扱うため、URLパラメータにはIDを直接指定する形式にします

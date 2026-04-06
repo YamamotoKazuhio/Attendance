@@ -63,6 +63,13 @@
             <a href="{{ route('admin.menu') }}" class="nav-back">← 管理メニューへ戻る</a>
         </div>
         
+        <div style="margin: 20px 0; display: flex; justify-content: flex-end;">
+            <a href="{{ route('admin.register') }}"
+                style="background-color: #28a745; color: white; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">+</span> 新規ユーザー登録
+            </a>
+        </div>
+        
         <div class="tab-area">
             <a href="{{ route('admin.users.index') }}" 
                 class="tab-btn {{ request('tab') !== 'all' ? 'tab-active' : 'tab-inactive' }}">
