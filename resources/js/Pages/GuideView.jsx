@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { Head } from '@inertiajs/react';
 
 // Workerの設定（CDN経由）
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -37,6 +38,9 @@ const GuideView = () => {
 
     return (
         <div style={{ display: 'flex', gap: '20px', padding: '20px' }}>
+            {/* ★ ブラウザのタブ名を指定 */}
+            <Head title="構築ガイド" /> 
+            <div style={{ display: 'flex', gap: '20px', padding: '20px' }}></div>
             {/* 左側：目次エリア */}
             <div style={{ width: '250px', borderRight: '1px solid #ccc', paddingRight: '20px' }}>
                 <h3>目次</h3>
@@ -70,7 +74,7 @@ const GuideView = () => {
                 </div>
 
                 <div style={{ border: '1px solid #000' }}>
-                    <Document file="/storage/guide.pdf" onLoadSuccess={onDocumentLoadSuccess}>
+                    <Document file="/storage/guidebook.pdf" onLoadSuccess={onDocumentLoadSuccess}>
                         <Page pageNumber={pageNumber} width={700} renderTextLayer={false} renderAnnotationLayer={false} />
                     </Document>
                 </div>

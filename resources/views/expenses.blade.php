@@ -13,6 +13,7 @@
         .btn-edit { background-color: #fff3e0; border: 1px solid #ff9800; color: #e65100; }
         .btn-delete { background-color: #ffebee; border: 1px solid #f44336; color: #c62828; }
         .btn-admin-panel { background-color: darkred; color: white; font-weight: bold; border: none; padding: 10px 20px; cursor: pointer; }
+        .btn-guide-link { background-color: #6c757d !important; color: white !important; margin-left: 10px; text-decoration: none; border-radius: 4px; padding: 5px 10px; }
         
         .report-table { width: 95%; margin: 20px auto; border-collapse: collapse; background: white; }
         .report-table th, .report-table td { border: 1px solid black; padding: 8px; text-align: center; }
@@ -32,6 +33,7 @@
             @csrf
             <button type="submit" class="big-text">サインアウト</button>
         </form>
+        <a href="{{ route('guide_expense.show') }}" class="big-text btn-guide-link">📖 ガイド</a>
     </div>
 
     <div class="top-right">

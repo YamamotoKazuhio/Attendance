@@ -21,6 +21,7 @@
         .btn-header { display: inline-block; padding: 8px 15px; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.9em; }
         .btn-profile { background-color: #4caf50; }
         .btn-expense { background-color: #007bff; }
+        .btn-guide { background-color: #9c27b0; }
         .btn-leave { background-color: #ff9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
         #emp { margin-left: 20px; background: white; padding: 15px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 950px; }
@@ -59,6 +60,7 @@
         <div class="header-left">
             <a href="{{ route('user_details.show', Auth::id()) }}" class="btn-header btn-profile">👤 プロフィール</a>
             <a href="{{ route('expenses.index') }}" class="btn-header btn-expense">💰 経費精算</a>
+            <a href="{{ route('guide.show') }}" class="btn-header btn-guide" style="margin-left: 5px;">📖 操作ガイド</a>
         </div>
         <div>
             @if(Auth::user()->is_admin)

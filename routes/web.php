@@ -14,30 +14,21 @@ use Inertia\Inertia;
 | Public Routes
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
     //return view('welcome');
     return view('top_page');
 });
 
-// マニュアル表示用ルーティング
-Route::get('/manual', function () {
-    $path = public_path('pdf/kintai-app_figure.pdf');
-
-    if (!file_exists($path)) {
-        abort(404, 'マニュアルファイルが見つかりません。');
-    }
-
-    // ブラウザでそのまま表示させる設定
-    return Response::file($path, [
-        'Content-Type' => 'application/pdf',
-        'Content-Disposition' => 'inline; filename="kintai-app_manual.pdf"'
-    ]);
-})->name('manual.show');
-
-//ガイドブック表示用ルーティング
+// 勤務表操作ガイドの表示
 Route::get('/guide', function () {
-    return Inertia::render('GuideView');
+    return view('guide');
 })->name('guide.show');
+
+// 経費精算操作ガイドの表示
+Route::get('/guide_expense', function () {
+    return view('guide_expense');
+})->name('guide_expense.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +36,7 @@ Route::get('/guide', function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
-    
+
     // 0. ダッシュボード
     Route::get('/dashboard', function () {
         return view('dashboard');
@@ -80,7 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |----------------------------------------------------------------------
     */
     Route::middleware(['can:admin'])->group(function () {
-        
+
         // 管理者メニュー選択画面
         Route::get('/admin/menu', function () {
             return view('admin.selector');
@@ -91,14 +82,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/finalize', [AttendanceController::class, 'finalizeMonth'])->name('admin.finalize');
         Route::post('/admin/reopen', [AttendanceController::class, 'reopenMonth'])->name('admin.reopen');
 
-        // ★経費：管理者用一覧 (エラーが出ていた箇所)
+        // 経費：管理者用一覧
         Route::get('/expenses/admin', [ExpenseController::class, 'adminIndex'])->name('expenses.admin');
 
         // 休暇申請：承認・却下ワークフロー
         Route::get('/admin/leave-requests', [LeaveApplicationController::class, 'adminIndex'])->name('admin.leave_requests');
         Route::post('/admin/leave-requests/{leaveApplication}/approve', [LeaveApplicationController::class, 'approve'])->name('admin.leave_approve');
         Route::post('/admin/leave-requests/{leaveApplication}/reject', [LeaveApplicationController::class, 'reject'])->name('admin.leave_reject');
-        
+
         // 社員情報一覧
         Route::get('/admin/users', [UserDetailController::class, 'adminIndex'])->name('admin.users.index');
         Route::delete('/admin/users/{user}', [UserDetailController::class, 'destroy'])->name('admin.users.destroy');
@@ -108,14 +99,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // 論理削除からの復元
         // 削除済みのユーザーを扱うため、URLパラメータにはIDを直接指定する形式にします
-        Route::post('/admin/users/{id}/restore', [UserDetailController::class, 'restore'])->name('admin.users.restore'); 
-        
+        Route::post('/admin/users/{id}/restore', [UserDetailController::class, 'restore'])->name('admin.users.restore');
+
         // --- オートメーション ---
         // 一括チェック＆承認実行
         Route::post('/admin/monthly-report/automate', [AttendanceController::class, 'automateMonth'])->name('admin.monthly.automate');
-        
+
         // 実行結果の新しいWeb画面表示
         Route::get('/admin/monthly-report/result', [AttendanceController::class, 'showAutomationResult'])->name('admin.monthly.result');
+
+        // マニュアル表示用ルーティング
+        Route::get('/manual', function () {
+            $path = public_path('pdf/kintai-app_figure.pdf');
+
+            if (!file_exists($path)) {
+                abort(404, 'マニュアルファイルが見つかりません。');
+            }
+
+            // ブラウザでそのまま表示させる設定
+            return Response::file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="kintai-app_manual.pdf"'
+            ]);
+        })->name('manual.show');
+
+        Route::get('/guidebook', function () {
+            return Inertia::render('GuideView');
+        })->name('guidebook.show');
+
+        Route::get('/', function () {
+            return view('admin.selector');
+        })->name('admin.menu');
     });
 });
 
