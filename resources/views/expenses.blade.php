@@ -4,141 +4,295 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>経費精算表</title>
+    <title>経費精算表 | 業務管理システム</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/expenses.css') }}">
     <script src="{{ asset('js/encoding.min.js') }}"></script>
+    
     <style>
-        .status-btn { padding: 4px 8px; margin: 2px; cursor: pointer; font-size: 11px; border-radius: 4px; }
-        .btn-apply { background-color: #e3f2fd; border: 1px solid #2196f3; color: #1976d2; }
-        .btn-edit { background-color: #fff3e0; border: 1px solid #ff9800; color: #e65100; }
-        .btn-delete { background-color: #ffebee; border: 1px solid #f44336; color: #c62828; }
-        .btn-admin-panel { background-color: darkred; color: white; font-weight: bold; border: none; padding: 10px 20px; cursor: pointer; }
-        .btn-guide-link { background-color: #6c757d !important; color: white !important; margin-left: 10px; text-decoration: none; border-radius: 4px; padding: 5px 10px; }
-        
-        .report-table { width: 95%; margin: 20px auto; border-collapse: collapse; background: white; }
-        .report-table th, .report-table td { border: 1px solid black; padding: 8px; text-align: center; }
-        .text-right { text-align: right; }
-        .approved { color: blue; font-weight: bold; }
-        .rejected-text { color: red; font-weight: bold; }
-        .pending { color: orange; font-weight: bold; }
-        
-        /* 却下理由表示行のスタイル */
-        .reject-reason-row { background-color: #fff0f0; }
-        .reject-reason-content { text-align: left !important; padding: 10px 20px !important; color: #d32f2f; border-top: none !important; }
+        /* インラインで追加のデザイン調整（必要に応じて外部CSSへ移動してください） */
+        body {
+            font-family: 'Inter', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #fdf5ef; /* ピーチパフをベースにした淡い背景色 */
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .main-container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* 入力フォームのカードデザイン */
+        .form-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .user-profile {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+            color: #555;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
+        }
+
+        /* 請求額の強調表示 */
+        .claim-summary {
+            grid-column: 1 / -1;
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .claim-label { font-size: 0.9rem; color: #666; }
+        .claim-value { font-size: 2rem; font-weight: 700; color: #1a73e8; margin-left: 10px; }
+
+        /* ステータスバッジ */
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-draft { background: #e0e0e0; color: #616161; }
+        .badge-pending { background: #fff3e0; color: #ef6c00; }
+        .badge-approved { background: #e8f5e9; color: #2e7d32; }
+        .badge-rejected { background: #ffebee; color: #c62828; }
+
+        /* テーブル */
+        .report-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .report-table th {
+            background-color: #444;
+            color: #fff;
+            padding: 15px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .report-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .reject-reason-content {
+            background-color: #fffafa;
+            color: #d32f2f;
+            text-align: left !important;
+            font-size: 0.85rem;
+            padding: 10px 20px !important;
+        }
+
+        .btn-primary { background: #1a73e8; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-outline { background: white; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+        .btn-outline:hover { background: #f5f5f5; }
     </style>
 </head>
 <body>
-    <div class="top-left">
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="big-text">サインアウト</button>
-        </form>
-        <a href="{{ route('guide_expense.show') }}" class="big-text btn-guide-link">📖 ガイド</a>
+
+    <nav class="header-nav">
+        <div>
+            <form method="POST" action="{{ route('logout') }}" style="display:inline;">
+                @csrf
+                <button type="submit" class="btn-outline">サインアウト</button>
+            </form>
+            <a href="{{ route('guide_expense.show') }}" class="btn-outline" style="text-decoration:none; margin-left:10px;">📖 ガイド</a>
+        </div>
+        <div>
+            <a href="{{ route('attendance.index') }}" style="text-decoration:none; font-weight:600; color:#1a73e8;">← 勤務表へ</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h2 style="text-align: center; margin-bottom: 30px; color:#333;">💰 経費精算申請</h2>
+
+        <div class="form-card">
+            <div class="user-profile">
+                <span><strong>社員番号:</strong> {{ Auth::user()->detail->employee_code ?? '未設定' }}</span>
+                <span><strong>氏名:</strong> {{ Auth::user()->detail->name_kanji ?? Auth::user()->name }}</span>
+            </div>
+
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>発生日</label>
+                    <input id="occured_date" type="date" value="{{ date('Y-m-d') }}">
+                </div>
+                <div class="input-group">
+                    <label>種別 / 詳細</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="category" onchange="updateSubcategory()" style="flex:1;">
+                            <option value="交通費">交通費</option>
+                            <option value="宿泊費">宿泊費</option>
+                            <option value="その他">その他</option>
+                        </select>
+                        <select id="subcategory" style="flex:1;"></select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>出発地</label>
+                    <input id="departure" type="text" placeholder="例：前橋駅">
+                </div>
+                <div class="input-group">
+                    <label>目的地</label>
+                    <input id="destination" type="text" placeholder="例：東京本社">
+                </div>
+                <div class="input-group">
+                    <label>支払先 / 備考</label>
+                    <input id="payee" type="text" placeholder="例：JR東日本">
+                </div>
+                <div class="input-group">
+                    <label>金額 (税込)</label>
+                    <input id="amount" type="number" oninput="calc()" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>前払い額</label>
+                    <input id="prepaid" type="number" oninput="calc()" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>領収書</label>
+                    <select id="receipt">
+                        <option value="あり">あり</option>
+                        <option value="なし">なし</option>
+                    </select>
+                </div>
+
+                <div class="claim-summary">
+                    <span class="claim-label">今回の請求額合計:</span>
+                    <span class="claim-value">¥ <span id="claimAmount">0</span></span>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+                <button id="submitBtn" class="btn-primary" onclick="submitData()">申請データを登録する</button>
+                <button class="btn-outline" onclick="clearData()">クリア</button>
+                
+                @if(Auth::user()->is_admin)
+                   <button type="button" style="background:darkred; color:white;" class="btn-primary" onclick="location.href='{{ route('expenses.admin') }}'">
+                        🛡️ 承認パネル
+                    </button>
+                @endif
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px; color:#555;">📋 直近の申請履歴（30件）</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>状態</th><th>発生日</th><th>内容</th><th>出発 / 目的</th><th>金額</th><th>請求額</th><th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($expenses as $ex)
+                <tr>
+                    <td>
+                        @if($ex->status == 0)
+                            <span class="badge badge-draft">下書き</span>
+                        @elseif($ex->status == 1)
+                            <span class="badge badge-pending">承認待ち</span>
+                        @elseif($ex->status == 2)
+                            <span class="badge badge-approved">承認済み</span>
+                        @elseif($ex->status == 3)
+                            <span class="badge badge-rejected">却下</span>
+                        @endif
+                    </td>
+                    <td>{{ $ex->occured_date }}</td>
+                    <td><strong>{{ $ex->category }}</strong><br><small>{{ $ex->subcategory }}</small></td>
+                    <td><small>{{ $ex->departure ?? '-' }}<br>↓<br>{{ $ex->destination ?? '-' }}</small></td>
+                    <td style="text-align:right;">{{ number_format($ex->amount) }}円</td>
+                    <td style="text-align:right; font-weight:700; color:#1a73e8;">{{ number_format($ex->claim_amount) }}円</td>
+                    <td>
+                        @if($ex->status == 0 || $ex->status == 3)
+                            <button class="status-btn btn-apply" style="color:#1a73e8; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="updateStatus({{ $ex->id }}, 1)">申請</button>
+                            <button class="status-btn btn-edit" style="color:#ef6c00; background:none; border:none; cursor:pointer;" onclick='editExpense(@json($ex))'>編集</button>
+                            <button class="status-btn btn-delete" style="color:#c62828; background:none; border:none; cursor:pointer;" onclick="deleteExpense({{ $ex->id }})">削除</button>
+                        @else
+                            -
+                        @endif
+                    </td>
+                </tr>
+                @if($ex->status == 3)
+                <tr>
+                    <td colspan="7" class="reject-reason-content">
+                        <strong>【却下理由】</strong> {{ $ex->reject_reason }}
+                    </td>
+                </tr>
+                @endif
+                @empty
+                <tr><td colspan="7">登録済みの経費データはありません。</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-
-    <div class="top-right">
-        <a href="{{ route('attendance.index') }}" class="big-text">勤務表へ</a>
-    </div>
-
-    <h2 style="text-align: center;">経費精算表</h2>
-
-    <div id="user_info" style="text-align: center; margin-bottom: 20px;">
-        {{-- 管理者が登録した詳細情報を優先的に参照 --}}
-        社員番号：<input type="text" id="empId" value="{{ Auth::user()->detail->employee_code ?? '未設定' }}" readonly style="width: 80px; border:none; background:none; font-weight:bold;">
-        名前：<input type="text" id="empName" value="{{ Auth::user()->detail->name_kanji ?? Auth::user()->name }}" readonly style="width: 150px; border:none; background:none; font-weight:bold;">
-    </div>
-
-    <table id="inputTable" style="margin: 0 auto; border: 2px solid black;">
-        <tr><th>発生日</th><td><input id="occured_date" type="date" value="{{ date('Y-m-d') }}"></td></tr>
-        <tr>
-            <th>種別</th>
-            <td>
-                <select id="category" onchange="updateSubcategory()">
-                    <option value="交通費">交通費</option>
-                    <option value="宿泊費">宿泊費</option>
-                    <option value="その他">その他物品等購入</option>
-                </select>
-                <select id="subcategory"></select>
-            </td>
-        </tr>
-        <tr><th>出発地</th><td><input id="departure" type="text"></td></tr>
-        <tr><th>目的地</th><td><input id="destination" type="text"></td></tr>
-        <tr><th>支払先</th><td><input id="payee" type="text"></td></tr>
-        <tr><th>金額</th><td><input id="amount" type="number" oninput="calc()"></td></tr>
-        <tr><th>前払い額</th><td><input id="prepaid" type="number" oninput="calc()"></td></tr>
-        <tr><th>請求額</th><td><span id="claimAmount">0</span></td></tr>
-        <tr>
-            <th>領収書</th>
-            <td>
-                <select id="receipt">
-                    <option value="あり">あり</option>
-                    <option value="なし">なし</option>
-                </select>
-            </td>
-        </tr>
-    </table>
-
-    <div id="buttonBar" style="text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-        <button id="submitBtn" onclick="submitData()">登録</button>
-        <button id="saveCSV" onclick="exportCSV()">CSVファイルに保存</button>
-        <button id="clearAll" onclick="clearData()">全てクリア</button>
-        
-        @if(Auth::user()->is_admin)
-           <button type="button" class="btn-admin-panel" onclick="location.href='{{ route('expenses.admin') }}'">
-                経費承認パネル
-            </button>
-        @endif
-    </div>
-
-    <h3 style="text-align: center; margin-top: 40px;">登録済データ（最新30件）</h3>
-    <table id="dataTable" class="report-table">
-        <thead>
-            <tr style="background: #eee;">
-                <th>申請</th><th>発生日</th><th>種別</th><th>詳細</th><th>出発地</th><th>目的地</th><th>支払先</th><th>金額</th><th>請求額</th><th>領収書</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($expenses as $ex)
-            <tr>
-                <td>
-                    @if($ex->status == 0 || $ex->status == 3)
-                        <button class="status-btn btn-apply" onclick="updateStatus({{ $ex->id }}, 1)">申請</button>
-                        <button class="status-btn btn-edit" onclick='editExpense(@json($ex))'>変更</button>
-                        <button class="status-btn btn-delete" onclick="deleteExpense({{ $ex->id }})">削除</button>
-                    @elseif($ex->status == 1)
-                        <span class="pending">承認待ち</span>
-                    @elseif($ex->status == 2)
-                        <span class="approved">承認済み</span>
-                    @endif
-                </td>
-                <td>{{ $ex->occured_date }}</td>
-                <td>{{ $ex->category }}</td>
-                <td>{{ $ex->subcategory }}</td>
-                <td>{{ $ex->departure }}</td>
-                <td>{{ $ex->destination }}</td>
-                <td>{{ $ex->payee }}</td>
-                <td class="text-right">{{ number_format($ex->amount) }}</td>
-                <td class="text-right">{{ number_format($ex->claim_amount) }}</td>
-                <td>{{ $ex->receipt }}</td>
-            </tr>
-            @if($ex->status == 3)
-            <tr class="reject-reason-row">
-                <td colspan="10" class="reject-reason-content">
-                    <span class="rejected-text">【却下】</span> 理由：{{ $ex->reject_reason }}
-                </td>
-            </tr>
-            @endif
-            @empty
-            <tr><td colspan="10">登録されたデータはありません。</td></tr>
-            @endforelse
-        </tbody>
-    </table>
 
     <script>
         const options = {
             "交通費": ["鉄道", "バス", "タクシー", "ガソリン代"],
             "宿泊費": ["宿泊費"],
-            "その他": ["レンタカー代", "物品購入"]
+            "その他": ["レンタカー代", "物品購入", "会議費"]
         };
 
         function updateSubcategory() {
@@ -182,40 +336,32 @@
             });
 
             if (res.ok) {
-                alert('登録しました。');
+                alert('データを登録しました。');
                 location.reload();
             }
         }
 
         async function updateStatus(id, status) {
-            if (!confirm('管理者に申請しますか？')) return;
+            if (!confirm('この経費を承認申請しますか？')) return;
 
-            try {
-                const res = await fetch(`/expenses/${id}/status`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ status: status })
-                });
+            const res = await fetch(`/expenses/${id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ status: status })
+            });
 
-                if (res.ok) {
-                    alert('申請を完了しました。管理者の承認をお待ちください。');
-                    location.reload();
-                } else {
-                    const errorData = await res.json();
-                    alert('エラーが発生しました：' + (errorData.message || '通信失敗'));
-                }
-            } catch (error) {
-                console.error(error);
-                alert('通信に失敗しました。');
+            if (res.ok) {
+                alert('申請を完了しました。');
+                location.reload();
             }
         }
 
         async function deleteExpense(id) {
-            if (!confirm('本当に削除しますか？')) return;
+            if (!confirm('このデータを削除しますか？')) return;
             const res = await fetch(`/expenses/${id}`, {
                 method: 'DELETE',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
@@ -235,8 +381,7 @@
             document.getElementById('prepaid').value = ex.prepaid;
             calc();
             document.getElementById('receipt').value = ex.receipt;
-            window.scrollTo(0, 0);
-            alert('修正したい内容を入力し、再度「登録」ボタンを押してください。');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function clearData() {

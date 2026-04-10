@@ -123,13 +123,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ]);
         })->name('manual.show');
 
-        Route::get('/guidebook', function () {
-            return Inertia::render('GuideView');
-        })->name('guidebook.show');
+        //Route::get('/guidebook', function () {
+        //    return Inertia::render('GuideView');
+        //})->name('guidebook.show');
 
-        Route::get('/', function () {
-            return view('admin.selector');
-        })->name('admin.menu');
+        // 1. 構築ガイドのメインメニュー（リンク先用ページ）
+        Route::get('/guidebook', function () {
+            return view('admin.guide.menu'); // resources/views/admin/guide/menu.blade.php
+        })->name('guidebook.menu');
+
+        // 2. Laravel & React のインストール
+        Route::get('/Laravel_React_install', function () {
+            return view('admin.guide.install');
+        })->name('guidebook.install');
+
+        // 3. 基本設計・詳細設計
+        Route::get('/Basic_detailed_design', function () {
+            return view('admin.guide.design');
+        })->name('guidebook.design');
+
+        // 4. 業務管理システムの構築
+        Route::get('/System_construction', function () {
+            return view('admin.guide.construction');
+        })->name('guidebook.construction');
     });
 });
 

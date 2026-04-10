@@ -1,79 +1,101 @@
-body{
-    background-color: peachpuff;
+/* 全体の基本設定 */
+body {
+    background-color: #f4f7f9; /* 落ち着いたグレーベージュに変更 */
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    color: #333;
+    margin: 0;
+    padding-top: 60px; /* ヘッダー固定用 */
 }
 
-button.big-text {
-  font-size: 16px;
-}
-
-.top-left,
-.top-right {
+/* ヘッダー・ナビゲーション */
+.top-left, .top-right {
     position: fixed;
-    top: 10px;
+    top: 0;
+    height: 50px;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    padding: 0 20px;
+}
+.top-left { left: 0; width: 100%; border-bottom: 1px solid #ddd; }
+.top-right { right: 20px; background: transparent; box-shadow: none; }
+
+/* コンテナ */
+.main-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 20px;
 }
 
-.top-left {
-    left: 10px;
+/* 入力セクション（カード型） */
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 30px;
+    margin-bottom: 40px;
 }
 
-.top-right {
-    right: 10px;
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 25px;
 }
 
-.top-left iframe {
+/* テーブルスタイル（モダン化） */
+.report-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     border: none;
 }
 
-
-#chime {
-    background: none;
+.report-table th {
+    background-color: #1a73e8;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 13px;
+    padding: 12px;
+    border: none;
 }
 
-#watch{
-    font-size: 20px;
-    text-align: center;
+.report-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
 }
 
-#openPage{
-    position: fixed; /* 画面に対して固定 */
-    top: 0;
-    right: 0;
-    margin: 10px; /* 端から少し余白を取りたい場合 */
-}
-
-#buttonBar {
-    justify-content: center;
-    display: flex;
-    gap: 10px; /* ボタン間のスペース */
-}
-
-button {
-    padding: 10px 20px;
+/* ステータスバッジ */
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
     font-size: 12px;
+    font-weight: bold;
 }
+.badge-pending { background: #fff3e0; color: #ef6c00; }
+.badge-approved { background: #e8f5e9; color: #2e7d32; }
+.badge-rejected { background: #ffebee; color: #c62828; }
 
-table, th, td {
-    border: 2px solid black;
-    background-color: #f2f2f2;
-    border-collapse: collapse;
-    padding: 5px;
-}
-
-th {
-    background-color: #f2f2f2;
-}
-
-input, select, button {
-    margin: 3px;
-}
-
+/* ボタン */
 button {
-    padding: 4px 8px;
+    border-radius: 6px;
+    transition: 0.2s;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
 }
 
-#buttonBar {
-    margin-top: 10px;
+#submitBtn {
+    background-color: #1a73e8;
+    color: white;
+    padding: 12px 40px;
+    font-size: 16px;
 }
+#submitBtn:hover { background-color: #1557b0; }
