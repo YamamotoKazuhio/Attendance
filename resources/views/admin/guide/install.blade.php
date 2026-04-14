@@ -100,7 +100,86 @@
         color: white;
     }
 
+    /* --- 画像の基本サイズ設定 --- */
+    .guide-figure img {
+        width: 300px;
+        /* 小さく表示するサイズ（お好みで調整） */
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        /* マウスを乗せた時に指マークにする */
+        transition: 0.3s;
+    }
+
+    .guide-figure img:hover {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+
+    /* --- 拡大表示用モーダルのスタイル --- */
+    #image-modal {
+        display: none;
+        /* 初期状態は非表示 */
+        position: fixed;
+        z-index: 9999;
+        /* 最前面に表示 */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        /* 背景を暗く */
+        justify-content: center;
+        align-items: center;
+        cursor: zoom-out;
+        /* クリックで閉じれることを示す */
+    }
+
+    #modal-img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        animation: zoomIn 0.3s;
+        /* ふわっと表示 */
+    }
+
+    @keyframes zoomIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
 </style>
+
+<div id="image-modal" onclick="this.style.display='none'">
+    <img id="modal-img" src="" alt="拡大図">
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        
+        // .guide-figure クラス内のすべての画像をクリック対象にする
+        const images = document.querySelectorAll('.guide-figure img');
+
+        images.forEach(img => {
+            img.addEventListener('click', () => {
+                modalImg.src = img.src; // クリックした画像のURLをコピー
+                modal.style.display = 'flex'; // 表示
+            });
+        });
+    });
+</script>
+
 <body>
     <div class="guide-wrapper">
         <nav class="sidebar">
@@ -159,11 +238,11 @@
             <div class="doc-content">
                 <h1>🛠️ Laravel & React 構築手順</h1>
 
-                @include('admin.guide.sections.env') {{-- 1. LaravelとReactについて --}}
-                @include('admin.guide.sections.herd') {{-- 2. Laravel Herd のインストール --}}
-                @include('admin.guide.sections.laravel') {{-- 3. Laravelのプロジェクト作成 --}}
-                @include('admin.guide.sections.mysql') {{-- 4. MySQL --}}
-                @include('admin.guide.sections.react') {{-- 5. React導入 --}}
+                @include('admin.guide.sections.1_env') {{-- 1. LaravelとReactについて --}}
+                @include('admin.guide.sections.2_herd') {{-- 2. Laravel Herd のインストール --}}
+                @include('admin.guide.sections.3_laravel') {{-- 3. Laravelのプロジェクト作成 --}}
+                @include('admin.guide.sections.4_mysql') {{-- 4. MySQL --}}
+                @include('admin.guide.sections.5_react') {{-- 5. React導入 --}}
 
                 <div class="pager">
                     <span></span> {{-- 最初のページなので「前へ」は空 --}}

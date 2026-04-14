@@ -1,3 +1,5 @@
+{{-- resources/views/admin/automation_result.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>

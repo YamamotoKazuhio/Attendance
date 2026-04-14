@@ -56,7 +56,7 @@
         </a>
 
         {{--操作マニュアルカード --}}
-        <a href="{{ url('/manual') }}" target="_blank" class="menu-card manual-card">
+        <a href="{{ url('/manual') }}" class="menu-card manual-card">
             <span class="icon">📖</span>
             <span class="title">操作ガイド</span>
             <p class="desc">システムの操作図解（PDF）を表示します。別タブで開きます。</p>

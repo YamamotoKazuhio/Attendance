@@ -108,7 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // 実行結果の新しいWeb画面表示
         Route::get('/admin/monthly-report/result', [AttendanceController::class, 'showAutomationResult'])->name('admin.monthly.result');
 
-        // マニュアル表示用ルーティング
+        /* マニュアル表示用ルーティング
         Route::get('/manual', function () {
             $path = public_path('pdf/kintai-app_figure.pdf');
 
@@ -122,10 +122,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'Content-Disposition' => 'inline; filename="kintai-app_manual.pdf"'
             ]);
         })->name('manual.show');
+        */
 
-        //Route::get('/guidebook', function () {
-        //    return Inertia::render('GuideView');
-        //})->name('guidebook.show');
+        // マニュアル表示用ルーティング
+        Route::get('/manual', function () {
+            return Inertia::render('GuideView'); // resources/js/Pages/GuideView.jsx
+        })->name('guidebook.show');
 
         // 1. 構築ガイドのメインメニュー（リンク先用ページ）
         Route::get('/guidebook', function () {

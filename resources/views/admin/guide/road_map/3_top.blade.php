@@ -11,7 +11,7 @@
         ログインユーザーの「今日の打刻状況」や「申請中の経費件数」などを取得してビューに渡します。</br>
         ファイル名: app/Http/Controllers/DashboardController.php<br>
         PHP<br>
-        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>&lt;?php
+        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; max-height: 300px; overflow-y: auto;"><code>&lt;?php
         
 namespace App\Http\Controllers;
         
@@ -66,47 +66,23 @@ Route::middleware(['auth'])->group(function () {
     <h3 id="view">3-3.トップページ画面 (View)</h3>
     <p>
         各機能へのショートカットをカード形式で配置し、現在の状態を一目でわかるようにします。</br>
-        ファイル名: resources/views/dashboard.blade.php</br>
-        以下の内容を新しいファイルとして保存します。</br>
-        HTML</br>
-        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>&lt;!DOCTYPE html&gt;
-&lt;html lang="ja"&gt;
-&lt;head&gt;
-    &lt;meta charset="UTF-8"&gt;
-    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-    &lt;title&gt;勤怠・経費管理システム&lt;/title&gt;
-    &lt;style&gt;
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .container { text-align: center; background: white; padding: 50px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 500px; width: 90%; }
-        h1 { color: #1a73e8; margin-bottom: 10px; font-size: 24px; }
-        p { color: #5f6368; margin-bottom: 30px; }
-        .btn-login { display: inline-block; background-color: #1a73e8; color: white; padding: 12px 40px; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background 0.3s; }
-        .btn-login:hover { background-color: #1557b0; }
-        .system-list { list-style: none; padding: 0; margin-bottom: 30px; text-align: left; display: inline-block; }
-        .system-list li { margin: 10px 0; color: #3c4043; }
-        .system-list li::before { content: "✅"; margin-right: 10px; }
-    &lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
+        ファイル名: resources/views/top_page.blade.php</br>
+        以下の内容を新しいファイルとして保存します。
+    </p>
+        <span onclick="openCodeModal('codeBlock_top')" style="color: #007bff; cursor: pointer; text-decoration: underline; font-weight: bold;">
+            <p style="margin-bottom: 5px; font-size: 1rem;">HTML</p>
+        </span>
 
-&lt;div class="container"&gt;
-    &lt;h1&gt;業務管理ポータル&lt;/h1&gt;
-    &lt;p&gt;社内システムへようこそ&lt;/p&gt;
-    
-    &lt;ul class="system-list"&gt;
-        &lt;li&gt;勤怠管理システム&lt;/li&gt;
-        &lt;li&gt;経費精算管理システム&lt;/li&gt;
-    &lt;/ul&gt;
-
-    &lt;div style="margin-top: 20px;"&gt;
-        &lt;a href="{{ route('login') }}" class="btn-login"&gt;ログイン画面へ&lt;/a&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
-
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-</code></pre>
+        <div id="codeBlock_top" style="display: none;">
+                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; text-align: left;"><code>@php
+            $path = base_path('resources/views/top_page.blade.php');
+            if (file_exists($path)) {
+                echo e(file_get_contents($path));
+            } else {
+                echo "ファイルが見つかりません: " . $path;
+            }
+        @endphp</code></pre>
+        </div>
     </p>
 
     <h3 id="construction-roadmap">3-4.構築のロードマップ</h3>

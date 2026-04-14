@@ -1,3 +1,5 @@
+{{--  resources/views/user_details/show.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>

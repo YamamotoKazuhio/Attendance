@@ -1,3 +1,5 @@
+{{-- resources/views/top_page.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>

@@ -1,3 +1,4 @@
+{{-- resources/views/admin/users/index.blade.php--}}
 <!DOCTYPE html>
 <html lang="ja">
 <head>

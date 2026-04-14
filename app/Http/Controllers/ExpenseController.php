@@ -1,5 +1,7 @@
 <?php
 
+/* app/Http/Controllers/ExpenseController.php */
+
 namespace App\Http\Controllers;
 
 use App\Models\Expense;

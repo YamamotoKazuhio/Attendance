@@ -1,3 +1,5 @@
+{{-- resources/views/expenses_admin.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>

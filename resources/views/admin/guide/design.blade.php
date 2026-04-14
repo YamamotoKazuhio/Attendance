@@ -191,10 +191,10 @@
         <main class="content-area">
             <div class="doc-content">
                 <h1>📐 基本設計・詳細設計書</h1>
-                @include('admin.guide.design.requirements'){{-- 要件定義 --}}
-                @include('admin.guide.design.basic'){{-- 基本設計書 --}}
-                @include('admin.guide.design.detail'){{-- 詳細設計書 --}}
-                @include('admin.guide.design.flow'){{-- 実装フロー --}}
+                @include('admin.guide.design.1_requirements'){{-- 要件定義 --}}
+                @include('admin.guide.design.2_basic'){{-- 基本設計書 --}}
+                @include('admin.guide.design.3_detail'){{-- 詳細設計書 --}}
+                @include('admin.guide.design.4_flow'){{-- 実装フロー --}}
                 <div class="pager">
                     <a href="{{ route('guidebook.install') }}" class="btn-page">← 前へ：インストール</a>
                     <a href="{{ route('guidebook.construction') }}" class="btn-page">次へ：実装フロー →</a>
