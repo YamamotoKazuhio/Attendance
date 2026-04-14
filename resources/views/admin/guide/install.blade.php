@@ -230,6 +230,10 @@
                 </div>
             </div>
 
+            <div class="menu-item">
+                <a href="#remarks" class="remarks-link">6. 備考</a>
+            </div>
+
             <hr>
             <a href="{{ route('guidebook.menu') }}" style="color:orange;">🔙 目次に戻る</a>
         </nav>
@@ -243,6 +247,7 @@
                 @include('admin.guide.sections.3_laravel') {{-- 3. Laravelのプロジェクト作成 --}}
                 @include('admin.guide.sections.4_mysql') {{-- 4. MySQL --}}
                 @include('admin.guide.sections.5_react') {{-- 5. React導入 --}}
+                @include('admin.guide.sections.6_remarks') {{-- 6. 備考 --}}
 
                 <div class="pager">
                     <span></span> {{-- 最初のページなので「前へ」は空 --}}

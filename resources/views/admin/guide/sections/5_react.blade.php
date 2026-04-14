@@ -26,8 +26,8 @@
     </ol>
 
     <h3 id="react-vite">5-2. Vite を使った推奨インストール手順</h3>
-    <p>Laravel 9.19以降では、Viteが公式にサポートされており、フロントエンドのビルドツールとして推奨されています。</br>
-       まずは、プロジェクトのルートディレクトリで以下のコマンドを実行して、ViteとReactの依存関係をインストールします。
+    <p>Laravel 9.19以降では、Viteが公式にサポートされており、フロントエンドのビルドツールとして</br>推奨されています。</br>
+       まずは、プロジェクトのルートディレクトリで以下のコマンドを実行して、ViteとReactの依存関係を</br>インストールします。
     </p>
     <ol class="guide-steps">
         <li>プロジェクトの作成</br>
@@ -61,7 +61,9 @@
     <ol class="guide-steps">
         <li>A. Next.js（フルスタック開発向け）</li>
         <p>本格的なWebアプリ（SEO対策やサーバーサイドレンダリングが必要な場合）を作るなら、Reactベースのフレームワークである Next.js を使うのが一般的です。</p>
-        <p">npx create-next-app@latest my-next-app</p>
+        <p style="background-color: #2d2d2d; color: #f8f8f2; padding: 5px 15px; border-radius: 5px; display: inline-block; font-family: Consolas, monospace; margin: 10px 0;">
+            npx create-next-app@latest my-next-app
+        </p>
         <li>B. CDN（既存のHTMLに少しだけ使いたい場合）</li>
             <p>
                 環境構築をせず、HTMLファイルに直接タグを貼って使う方法です。</br>

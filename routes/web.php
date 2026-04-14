@@ -20,6 +20,10 @@ Route::get('/', function () {
     return view('top_page');
 });
 
+Route::get('/welcome', function () {
+    return view('welcome');
+});
+
 // 勤務表操作ガイドの表示
 Route::get('/guide', function () {
     return view('guide');
