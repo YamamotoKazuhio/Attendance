@@ -1,5 +1,5 @@
 <section id="remarks">
-    <h2 id="remarks">6.備考</h2>
+    <h2 id="remarks">7.備考</h2>
     <h3><strong>Laravelの「中に」Reactを組み込んでいる場合（Inertia.js / Breeze / Jetstream）</strong></h3>
     <p>
         もし laravel/breeze などを使ってReactをインストールした場合、</br>

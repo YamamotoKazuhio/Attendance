@@ -1,5 +1,6 @@
 <section id="mysql">
-    <h2>4. MySQLのインストール</h2>
+    <h2>4. Windows版MySQLのインストール</h2>
+    <p>Linux版MySQLのインストールは、こちらへ。</p>
     <h3 id="mysql-download">4-1. MySQLのダウンロード</h3>
     <p>
         Laravel Herdの無料版は、PHPの環境は作ってくれますが、MySQL（データベース本体）は同梱されていません。そこで、MySQLの代わりにデフォルトDBとしSQLiteが使われています。</br>

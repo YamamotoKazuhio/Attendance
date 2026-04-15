@@ -210,7 +210,7 @@
             </div>
 
             <div class="menu-item">
-                <a href="#mysql" class="parent-link">4. データベース（MySQL）の起動</a>
+                <a href="#mysql" class="parent-link">4. Windows版データベース（MySQL）の起動</a>
                 <div class="submenu" id="submenu-mysql">
                     <a href="#mysql-download">4-1. MySQLのダウンロード</a>
                     <a href="#mysql-install">4-2. MySQLのインストール</a>
@@ -220,18 +220,26 @@
                 </div>
             </div>
 
+             <div class="menu-item">
+                <a href="#mysql_linux" class="parent-link">5. Linux版データベース（MySQL）の起動</a>
+                <div class="submenu" id="submenu-mysql_linux">
+                    <a href="#mysql_linux-download">5-1. MySQLのダウンロードおよびインストール</a>
+                    <a href="#mysql_linux-create">5-2. データベースの作成</a>
+                </div>
+             </div>
+
             <div class="menu-item">
-                <a href="#react" class="parent-link">5. Reactの導入</a>
+                <a href="#react" class="parent-link">6. Reactの導入</a>
                 <div class="submenu" id="submenu-react">
-                    <a href="#react-intro">5-1. Reactの導入</a>
-                    <a href="#react-prepare">5-2. 事前準備</a>
-                    <a href="#react-vite">5-3. Viteでの導入</a>
-                    <a href="#react-other">5-4. その他の方法</a>
+                    <a href="#react-intro">6-1. Reactの導入</a>
+                    <a href="#react-prepare">6-2. 事前準備</a>
+                    <a href="#react-vite">6-3. Viteでの導入</a>
+                    <a href="#react-other">6-4. その他の方法</a>
                 </div>
             </div>
 
             <div class="menu-item">
-                <a href="#remarks" class="remarks-link">6. 備考</a>
+                <a href="#remarks" class="remarks-link">7. 備考</a>
             </div>
 
             <hr>
@@ -245,9 +253,10 @@
                 @include('admin.guide.sections.1_env') {{-- 1. LaravelとReactについて --}}
                 @include('admin.guide.sections.2_herd') {{-- 2. Laravel Herd のインストール --}}
                 @include('admin.guide.sections.3_laravel') {{-- 3. Laravelのプロジェクト作成 --}}
-                @include('admin.guide.sections.4_mysql') {{-- 4. MySQL --}}
-                @include('admin.guide.sections.5_react') {{-- 5. React導入 --}}
-                @include('admin.guide.sections.6_remarks') {{-- 6. 備考 --}}
+                @include('admin.guide.sections.4_mysql_win') {{-- 4. MySQL_windows --}}
+                @include('admin.guide.sections.5_mysql_Linux') {{-- 5. MySQL_Linux --}}
+                @include('admin.guide.sections.6_react') {{-- 6. React導入 --}}
+                @include('admin.guide.sections.7_remarks') {{-- 7. 備考 --}}
 
                 <div class="pager">
                     <span></span> {{-- 最初のページなので「前へ」は空 --}}
