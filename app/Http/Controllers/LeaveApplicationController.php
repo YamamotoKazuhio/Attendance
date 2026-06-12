@@ -17,44 +17,43 @@ class LeaveApplicationController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info("デバッグ: 現在接続しているDBパスは: " . config('database.connections.sqlite.database'));
+
         try {
-            // 1. バリデーション
-            $request->validate([
-                'target_date' => 'required|date',
-                'type'        => 'required|string',
-                'days_count'  => 'required|numeric',
-                'reason'      => 'nullable|string|max:255',
-            ]);
+            // ユーザーIDが取得できているか確認
+            $userId = Auth::id();
+            Log::info("デバッグ: ユーザーID確認", ['user_id' => $userId]);
 
-            // 【追加】重複チェック：同一ユーザー、同一日、かつ「申請中(0)」または「承認済み(1)」のデータがあるか
-            $exists = LeaveApplication::where('user_id', Auth::id())
-                ->where('target_date', $request->target_date)
-                ->whereIn('status', [0, 1])
-                ->exists();
-
-            if ($exists) {
-                return response()->json([
-                    'message' => '重複エラー：その日は既に申請済みか、承認されています。'
-                ], 422);
+            if (!$userId) {
+                throw new \Exception("ユーザーがログインしていません。");
             }
 
-            // 2. データの作成
-            LeaveApplication::create([
-                'user_id'     => Auth::id(),
-                'target_date' => $request->target_date,
-                'type'        => $request->type,
-                'days_count'  => (float)$request->days_count, // 数値として確実にキャスト
-                'reason'      => $request->reason,
-                'status'      => 0, // 0: 申請中
+            // 1. バリデーション（一旦エラーを出力させるために細分化）
+            $request->validate([
+                'target_date' => 'required',
+                'type'        => 'required',
+                'days_count'  => 'required',
             ]);
 
-            return response()->json(['message' => '申請を送信しました。']);
+            // 2. 作成処理
+            $application = LeaveApplication::create([
+                'user_id'     => $userId,
+                'target_date' => $request->target_date,
+                'type'        => $request->type,
+                'days_count'  => $request->days_count,
+                'reason'      => $request->reason ?? '勤務表から選択',
+                'status'      => 0,
+            ]);
+
+            Log::info("デバッグ: DB保存完了 ID: " . $application->id);
+            return response()->json(['message' => '申請成功'], 200);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => '入力内容に不備があります。', 'errors' => $e->errors()], 422);
+            Log::error("バリデーションエラー: ", $e->errors());
+            return response()->json(['message' => 'バリデーション失敗'], 422);
         } catch (\Exception $e) {
-            // エラーをログ(storage/logs/laravel.log)に記録
-            Log::error("LeaveApplication Store Error: " . $e->getMessage());
-            return response()->json(['message' => 'サーバー内でエラーが発生しました。'], 500);
+            Log::error("エラー発生: " . $e->getMessage());
+            return response()->json(['message' => 'エラー: ' . $e->getMessage()], 500);
         }
     }
 
@@ -63,11 +62,21 @@ class LeaveApplicationController extends Controller
      */
     public function adminIndex()
     {
-        // 未承認(status=0)の申請を、対象日が近い順に取得
-        $applications = LeaveApplication::with('user')
+        // 1. デバッグ用に全件取得してログ出力（問題切り分けのため残しています）
+        $allApplications = LeaveApplication::all();
+        Log::info("デバッグ: DB内の全申請データ数: " . $allApplications->count());
+
+        // 2. 承認対象として許可するタイプを定義
+        $allowedTypes = ['午前半休', '午後半休', '有給', '特別休暇', '休出'];
+
+        // 3. 承認待ち かつ 指定したタイプのみを取得
+        $applications = LeaveApplication::with('user.detail')
             ->where('status', 0)
+            ->whereIn('type', $allowedTypes)
             ->orderBy('target_date', 'asc')
             ->get();
+
+        Log::info("デバッグ: 抽出された承認待ちデータ数: " . $applications->count());
 
         return view('admin.leave_requests', compact('applications'));
     }
@@ -104,7 +113,8 @@ class LeaveApplicationController extends Controller
                     ],
                     [
                         'attendance_type' => $attType,
-                        'is_locked'       => 2, // 2: 承認済み（本人編集不可）
+                        'status'          => '承認済み',
+                        'is_locked'       => 1, // 1: 承認済み（本人編集不可）
                     ]
                 );
             });

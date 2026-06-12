@@ -21,7 +21,6 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        /** @var \App\Models\User $targetUser */
         $targetUser = $user;
         $query = $request->input('search_query');
 
@@ -30,14 +29,15 @@ class AttendanceController extends Controller
             $foundUser = User::whereHas('detail', function ($q) use ($query) {
                 $q->where('employee_code', $query);
             })
-                ->orWhere('name', 'LIKE', "%{$query}%")
-                ->first();
+            ->orWhere('name', 'LIKE', "%{$query}%")
+            ->first();
 
             if ($foundUser) {
                 $targetUser = $foundUser;
             }
         }
 
+        // ユーザー詳細情報を読み込む
         $targetUser->load('detail');
 
         // 表示対象月の設定
@@ -53,13 +53,12 @@ class AttendanceController extends Controller
         // 祝日データの取得
         $holidays = $this->getPublicHolidays();
 
-        return view('attendance', [
-            'user' => $user,
-            'targetUser' => $targetUser,
-            'attendances' => $attendances,
-            'targetMonth' => $targetMonth, // キー名をBlade側に合わせる
-            'holidays' => $holidays,
-        ]);
+        // ★更新ポイント: ビューで「現在残高」を正確に表示するための計算値を追加
+        // Userモデルのアクセサ (getPaidLeaveRemainingAttribute) を呼び出し、
+        // ビュー側で `display_remaining_days` として参照できるようにします。
+        //$targetUser->display_remaining_days = $targetUser->paid_leave_remaining;
+
+        return view('attendance', compact('targetUser', 'targetMonth', 'attendances', 'holidays'));
     }
 
     /**
@@ -77,146 +76,151 @@ class AttendanceController extends Controller
         try {
             DB::transaction(function () use ($data, $targetUserId) {
                 foreach ($data as $item) {
-                    // デバッグ用：$itemの中身をログに焼く（後で確認するため）
-                    // \Log::info('Saving item: ', (array)$item);
-
-                    // JS側から 'date' または 'work_date' という名前で日付が来ているか確認
-                    $date = $item['date'] ?? ($item['work_date'] ?? null);
-
+                    Log::info("DEBUG: 保存対象データ", ['date' => $item['work_date'] ?? 'なし', 'status' => $item['status'] ?? 'なし']);
+                    $date = $item['work_date'] ?? null;
                     if (!$date) continue;
 
-                    // 休憩時間の取得
-                    $rest = (isset($item['rest']) && $item['rest'] !== "") ? (float)$item['rest'] : 0;
+                    $rest = (isset($item['break_time']) && $item['break_time'] !== "") ? (float)$item['break_time'] : 0;
 
-                    // データベースへの書き込み
-                    \App\Models\Attendance::updateOrCreate(
+                    // 1. 勤怠データの保存
+                    Attendance::updateOrCreate(
                         [
                             'user_id'   => $targetUserId,
                             'work_date' => $date
                         ],
                         [
-                            'attendance_type' => $item['type'] ?? '',
+                            'status'          => $item['status'] ?? '登録',
+                            'attendance_type' => $item['attendance_type'] ?? '',
                             'workplace'       => $item['workplace'] ?? '',
                             'shift'           => $item['shift'] ?? '',
-                            'start_time'      => !empty($item['start']) ? $item['start'] : null,
-                            'end_time'        => !empty($item['end']) ? $item['end'] : null,
+                            'start_time'      => !empty($item['start_time']) ? $item['start_time'] : null,
+                            'end_time'        => !empty($item['end_time']) ? $item['end_time'] : null,
                             'break_time'      => $rest,
-                            'overtime'        => (float)($item['ot'] ?? 0),
-                            'work_time'       => (float)($item['work'] ?? 0),
-                            'is_locked'       => $item['is_locked'] ?? 0,
+                            'overtime'        => (float)($item['overtime'] ?? 0),
+                            'work_time'       => (float)($item['work_time'] ?? 0),
                         ]
                     );
+
+                    // 2. 「承認待ち」の場合、申請テーブルへも反映
+                    if (($item['status'] ?? '') === '承認待ち') {
+                        \App\Models\LeaveApplication::updateOrCreate(
+                            [
+                                'user_id'     => $targetUserId,
+                                'target_date' => $date,
+                            ],
+                            [
+                                'type'       => $item['attendance_type'] ?? '未分類',
+                                'days_count' => ($item['attendance_type'] === '有給') ? 1.0 : 0,
+                                'reason'     => '勤務表より一括申請',
+                                'status'     => 0 // 承認待ち
+                            ]
+                        );
+                    }
                 }
             });
 
+            Log::info("勤怠および申請データの保存完了: User ID " . $targetUserId);
             return response()->json(['message' => 'データベースに保存しました。']);
+
         } catch (\Exception $e) {
             Log::error("勤怠保存失敗: " . $e->getMessage());
             return response()->json(['message' => '保存エラー: ' . $e->getMessage()], 500);
         }
     }
+    /**
+     * 基本情報（所属・通勤費）の更新
+     */
+    public function updateBasicInfo(Request $request)
+    {
+        // ログインユーザーではなく、JSから送られた user_id を使用する
+        $userId = $request->input('user_id'); 
+        $department = $request->input('department');
+        $commuteFee = $request->input('commute_fee');
+
+        if (!$userId) return response()->json(['message' => 'ユーザー不明'], 400);
+
+        try {
+            UserDetail::updateOrCreate(
+                ['user_id' => $userId],
+                [
+                    'department' => $department,
+                    'commute_fee' => $commuteFee
+                ]
+            );
+            return response()->json(['message' => '基本情報を保存しました。']);
+        } catch (\Exception $e) {
+            Log::error("基本情報保存失敗: " . $e->getMessage());
+            return response()->json(['message' => '保存に失敗しました。'], 500);
+        }
+    }
+
 
     /**
      * 管理者用：月次レポート集計一覧
      */
     public function adminMonthlyReport(Request $request)
     {
-        if (!Auth::user()->is_admin) {
-            abort(403);
-        }
+        if (!Auth::user()->is_admin) abort(403);
 
-        $targetMonth = $request->input('month', date('Y-m'));
-        $targetMonth = substr($targetMonth, 0, 7);
+        $targetMonth = substr($request->input('month', date('Y-m')), 0, 7);
 
-        // ユーザーと、その月の勤怠データを一括取得
+        // ユーザーデータと今月の勤怠をまとめて取得
         $users = User::with(['detail', 'attendances' => function ($q) use ($targetMonth) {
             $q->where('work_date', 'LIKE', "{$targetMonth}%");
         }])->get();
 
-        $usersData = $users->map(function ($user) {
+        $usersData = $users->map(function ($user) use ($targetMonth) {
             $monthData = $user->attendances;
             $detail = $user->detail;
 
-            // 1. 稼働日数の集計
+            // 1. 今月の有給取得日数の集計
+            // 「有給」は1日、「午前半休」「午後半休」は0.5日としてカウントするロジック
+            $monthlyPaid = $monthData->reduce(function ($carry, $att) {
+                if ($att->attendance_type === '有給') return $carry + 1.0;
+                if (in_array($att->attendance_type, ['午前半休', '午後半休'])) return $carry + 0.5;
+                return $carry;
+            }, 0);
+
+            // 2. 基本情報の取得
             $workDays = $monthData->whereIn('attendance_type', ['出勤', '振替出勤', '現場出勤', '通常勤務'])->count();
-
-            // 2. 今月の有給取得日数（全休1.0 + 半休0.5）
-            $paidFull = $monthData->where('attendance_type', '有給')->count();
-            $halfPaid = $monthData->whereIn('attendance_type', ['午前半休', '午後半休'])->count() * 0.5;
-            $monthlyPaidDays = $paidFull + $halfPaid;
-
-            // 3. 基本情報と通勤費計算
-            $dailyCommute = (float)($user->daily_commute_fee ?? 0);
-            $totalCommute = $workDays * $dailyCommute;
-
-            // 4. 有給残数（将来的にusersテーブルにカラムを追加することを想定）
-            // 現状カラムがない場合は一律0を表示するように安全策をとる
-            $remainingPaid = $user->paid_leave_remaining ?? 0;
-
-            // 5. その月のデータが1件以上あるか確認
-            $hasData = $monthData->isNotEmpty();
-
-            // 6. 全てのデータが 1（承認待ち）以上か判定
-            $isAllLockedOrMore = $hasData && $monthData->every(fn($att) => $att->is_locked >= 1);
-
-            // 7. 全てのデータが 2（承認済み）以上か判定
-            $isAllApprovedOrMore = $hasData && $monthData->every(fn($att) => $att->is_locked >= 2);
-
-            // 表示用ステータスを決定
-            $statusText = '未確定';
-            if ($isAllApprovedOrMore) {
-                $statusText = '承認済み・変更不可';
-            } elseif ($isAllLockedOrMore) {
-                $statusText = '確定（承認待ち）';
-            }
+            $dailyCommute = (float)($detail->commute_fee ?? 0);
+            
+            // 確定状態の判定 (is_locked カラムを使用)
+            $isFinalized = $monthData->contains('is_locked', 1);
 
             return [
-                'id'              => $user->id,
-                'emp_id'          => $detail->employee_code ?? '-',
-                'name'            => $detail->name_kanji ?? $user->name,
-                'monthly_paid'    => $monthlyPaidDays, // 今月の有給取得日数
-                'remaining_paid'  => $remainingPaid,   // 有給残日数
-                'total_work'      => $monthData->sum('work_time'),
-                'total_ot'        => $monthData->sum('overtime'),
-                'total_commute'   => $totalCommute,
-                'status_text'     => $statusText,
-                'is_finalized'    => $isAllLockedOrMore ? 1 : 0,
+                'id'               => $user->id,
+                'email'            => $user->email,
+                'emp_id'           => $detail->employee_code ?? '-',
+                'name'             => $user->name,
+                'name_kanji'       => $detail->name_kanji ?? '',
+                'department'       => $detail->department ?? '-',
+                'work_days'        => $workDays,
+                'monthly_paid'     => $monthlyPaid,
+                // 3. 有給残日数はモデルのアクセサを利用して動的に計算する
+                'remaining_paid'   => $user->paid_leave_remaining, 
+                'total_work'       => $monthData->sum('work_time'),
+                'total_ot'         => $monthData->sum('overtime'),
+                'total_commute'    => $workDays * $dailyCommute,
+                'is_finalized'     => $isFinalized,
             ];
         });
 
         return view('admin.monthly_report', [
-            'users'       => $usersData,
+            'users' => $usersData,
             'targetMonth' => $targetMonth,
         ]);
     }
 
-    /**
-     * 管理者用：月次確定
-     */
-    public function finalizeMonth(Request $request)
-    {
-        return $this->setLockStatus($request, 1, '月次確定しました。');
-    }
+    public function finalizeMonth(Request $request) { return $this->setLockStatus($request, 1, '月次確定しました。'); }
+    public function reopenMonth(Request $request) { return $this->setLockStatus($request, 0, '確定を解除しました。'); }
 
-    /**
-     * 管理者用：確定解除
-     */
-    public function reopenMonth(Request $request)
-    {
-        return $this->setLockStatus($request, 0, '確定を解除しました。');
-    }
-
-    /**
-     * ロック状態の一括更新
-     */
     private function setLockStatus(Request $request, $status, $message)
     {
         $userId = $request->input('user_id');
         $month = $request->input('month');
 
-        if (!$userId || !$month) {
-            return back()->with('error', '不正なリクエストです。');
-        }
+        if (!$userId || !$month) return back()->with('error', '不正なリクエストです。');
 
         Attendance::where('user_id', $userId)
             ->where('work_date', 'LIKE', "{$month}%")
@@ -225,102 +229,9 @@ class AttendanceController extends Controller
         return back()->with('success', $message);
     }
 
-    /**
-     * 基本情報（所属・通勤費）の更新
-     */
-    public function updateBasicInfo(Request $request)
-    {
-        $userId = $request->input('user_id');
-        $department = $request->input('department');
-        $commuteFee = $request->input('commute_fee');
+    public function automateMonth(Request $request) { return redirect()->route('admin.monthly_report'); }
+    public function showAutomationResult() { return view('admin.automation_result'); }
 
-        try {
-            $user = User::findOrFail($userId);
-            $user->department = $department;
-            $user->daily_commute_fee = $commuteFee;
-            $user->save();
-
-            return response()->json(['message' => '基本情報を保存しました。']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => '保存失敗: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function automateMonth(Request $request)
-    {
-        $targetMonth = $request->input('month'); // "2026-03"
-        $thresholdDays = 20; // 判定基準（20日）
-
-        $users = User::with(['detail', 'attendances' => function ($q) use ($targetMonth) {
-            $q->where('work_date', 'LIKE', "{$targetMonth}%");
-        }])->get();
-
-        $results = [];
-
-        foreach ($users as $user) {
-            $attendances = $user->attendances;
-            $errors = [];
-
-            // 1. 入力日数のカウント
-            $filledDays = $attendances->whereNotNull('attendance_type')
-                ->where('attendance_type', '!=', '')
-                ->count();
-
-            // 2. 入力日数チェック
-            if ($filledDays < $thresholdDays) {
-                $errors[] = "入力日数が不足しています（現在{$filledDays}日 / 目標{$thresholdDays}日）";
-            }
-
-            // 3. 各日の内容チェック（既存のロジック）
-            foreach ($attendances as $att) {
-                if (in_array($att->attendance_type, ['出勤', '現場出勤']) && (!$att->start_time || !$att->end_time)) {
-                    $errors[] = "{$att->work_date}: 打刻漏れがあります。";
-                }
-                // 他のチェック（開始 > 終了など）もここに含まれる
-            }
-
-            // 4. 全チェックを通過した場合のみ一括承認（確定）
-            $isApproved = false;
-            if (empty($errors)) {
-                Attendance::where('user_id', $user->id)
-                    ->where('work_date', 'LIKE', "{$targetMonth}%")
-                    ->update(['is_locked' => 2]);
-                $isApproved = true;
-            }
-
-            $results[] = [
-                'emp_code'   => $user->detail->employee_code ?? '-',
-                'name'       => $user->detail->name_kanji ?? $user->name,
-                'dept'       => $user->department ?? '未設定',
-                'total_work' => $attendances->sum('work_time'),
-                'total_ot'   => $attendances->sum('overtime'),
-                'filled_days' => $filledDays, // 追加：入力日数
-                'threshold'   => $thresholdDays,
-                'errors'     => $errors,
-                'status'     => $isApproved ? '承認済み' : '要修正',
-            ];
-        }
-
-        return redirect()->route('admin.monthly.result')->with([
-            'automation_results' => $results,
-            'target_month' => $targetMonth
-        ]);
-    }
-
-    public function showAutomationResult()
-    {
-        $results = session('automation_results');
-        if (!$results) return redirect()->route('admin.monthly_report');
-
-        return view('admin.automation_result', [
-            'results' => $results,
-            'month'   => session('target_month')
-        ]);
-    }
-
-    /**
-     * 祝日データの取得 (内閣府CSV)
-     */
     private function getPublicHolidays()
     {
         return Cache::remember('japan_public_holidays', 86400, function () {
@@ -335,18 +246,30 @@ class AttendanceController extends Controller
                         if ($index === 0 || empty(trim($line))) continue;
                         $columns = explode(',', $line);
                         if (isset($columns[0])) {
-                            try {
-                                $holidays[] = Carbon::parse($columns[0])->format('Y-m-d');
-                            } catch (\Exception $e) {
-                            }
+                            try { $holidays[] = Carbon::parse($columns[0])->format('Y-m-d'); } catch (\Exception $e) {}
                         }
                     }
                     return $holidays;
                 }
-            } catch (\Exception $e) {
-                Log::warning("Holiday Fetch Error: " . $e->getMessage());
-            }
+            } catch (\Exception $e) { Log::warning("Holiday Fetch Error: " . $e->getMessage()); }
             return [];
         });
+    }
+
+    public function toggleStatus($id)
+    {
+        $attendance = Attendance::findOrFail($id);
+    
+        // ステータスとロック状態のトグル
+        if ($attendance->status === '承認済み') {
+            $attendance->status = '承認待ち';
+            $attendance->is_locked = 0; // 編集可能に戻す
+        } else {
+            $attendance->status = '承認済み';
+            $attendance->is_locked = 1; // 編集不可にする
+        }
+    
+        $attendance->save();
+        return back()->with('success', 'ステータスを更新しました。');
     }
 }

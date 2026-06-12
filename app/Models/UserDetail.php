@@ -14,6 +14,8 @@ class UserDetail extends Model
      */
     protected $fillable = [
         'user_id',
+        'department',
+        'commute_fee',
         'employee_code',          // 社員番号
         'name_kanji',             // 氏名
         'joined_at',              // 入社年月日
@@ -21,6 +23,7 @@ class UserDetail extends Model
         'phone_number',           // 連絡先
         'emergency_contact',      // 緊急連絡先
         'emergency_relationship', // 本人との関係
+        'department',
     ];
 
     /**

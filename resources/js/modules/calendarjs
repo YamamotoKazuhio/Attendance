@@ -1,0 +1,31 @@
+import { changeMonth } from "./calendar/navigation.js";
+import { updateStatusLabel, openDetailModal } from "./calendar/uiUpdater.js";
+import { loadData, submitLeaveApplication } from "./calendar/tableRenderer.js";
+
+export { loadData, submitLeaveApplication } from "./calendar/tableRenderer.js";
+
+// グローバル公開
+window.changeMonth = changeMonth;
+window.openDetailModal = openDetailModal;
+window.submitLeaveApplication = submitLeaveApplication;
+window.loadData = loadData;
+
+document.addEventListener("DOMContentLoaded", () => {
+    // 休暇・残業申請ボタンのイベント設定
+    const leaveBtn = document.getElementById("btnOpenLeaveModal");
+    const leaveModal = document.getElementById("leaveModal");
+
+    if (leaveBtn) {
+        leaveBtn.addEventListener("click", () => {
+            if (leaveModal) {
+                leaveModal.style.display = "block";
+            } else {
+                console.error("ID: leaveModal が見つかりません。");
+                alert("申請画面の準備ができていません。");
+            }
+        });
+    }
+    
+    // 必要であればここで loadData() を実行
+    // loadData(); 
+});

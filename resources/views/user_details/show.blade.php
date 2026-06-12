@@ -95,7 +95,7 @@
         <div class="section-title">連絡先・詳細情報</div>
         <div style="padding: 10px;">
             <div class="form-group">
-                <label>住所（市区町村以降）</label>
+                <label>住所（市町村名まで記入）</label>
                 <input type="text" name="address_city" value="{{ old('address_city', $user->detail->address_city ?? '') }}" class="form-control" required>
             </div>
 

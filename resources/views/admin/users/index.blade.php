@@ -24,7 +24,7 @@
         
         /* 列幅の調整 */
         .col-code { width: 100px; }
-        .col-name { width: 150px; }
+        .col-name_kanji { width: 100px; }
         .col-email { width: 200px; }
         .col-date { width: 120px; }
         .col-years { width: 80px; }
@@ -86,8 +86,8 @@
             <thead>
                 <tr>
                     <th class="col-code">社員番号</th>
-                    <th class="col-name">氏名</th>
-                    <th class="col-email">アカウント名</th>
+                    <th class="col-name_kanji">氏名</th>
+                    <th class="col-email">メールアドレス</th>
                     <th class="col-date">入社日</th>
                     <th class="col-years">勤続年数</th>
                     <th class="col-paid">有給残数</th>

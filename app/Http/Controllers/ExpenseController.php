@@ -42,7 +42,7 @@ class ExpenseController extends Controller
     {
         // 経費データと一緒に user とその先の detail (社員番号・漢字氏名用) もロード
         $adminExpenses = Expense::with(['user.detail'])
-            ->where('status', '>=', 1)
+            ->where('status', '>=', 0)
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -92,7 +92,9 @@ class ExpenseController extends Controller
         $user = Auth::user();
 
         // 権限チェック：管理者であるか、もしくはデータの所有者本人のみ許可
-        if ($user->is_admin !== 1 && $user->id !== $expense->user_id) {
+        // 修正: Boolean値として判定する
+        // 管理者であれば true、自分の申請であれば true になるようにします
+        if (!$user->is_admin && $user->id !== $expense->user_id) {
             return response()->json(['error' => '権限がありません'], 403);
         }
 

@@ -1,131 +1,247 @@
+/* --- ベーススタイル --- */
 body {
-    background-image: url(./png/favicon_1.png);
+    background-image: url(../png/favicon_1.png);
     margin: 0;
-    padding: 0;
-    font-family: sans-serif;
+    padding: 20px;
+    font-family:
+        "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+        Meiryo, sans-serif;
+    color: #333;
+    background-color: #fdfdfd;
 }
 
-/* タイトル中央配置 */
 #title {
     text-align: center;
     font-size: 24px;
-    margin-top: 10px;
+    margin: 20px 0;
+}
+
+/* --- コンテナ設定 --- */
+.main-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 20px;
+}
+
+/* --- 情報エリア --- */
+.info-boxes {
     margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #fdfdfd;
+    padding: 10px 0;
+    border-bottom: 2px solid #eee;
 }
 
-/* 左上：iframeとリンク */
-.top-left {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+.info-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: start;
+}
+
+.info-left,
+.info-right,
+#paidLeaveDetails,
+#monthlySummary {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    gap: 1px; /* 等間隔を設定 */
-    align-items: flex-start;
+    gap: 8px;
+    min-width: 200px;
+    flex: 1;
 }
 
-/* 経費精算・全てクリアボタンのサイズ調整 */
-.top-left button {
-    font-size: 20px; /* 経費精算ボタンの文字サイズを明示 */
-    padding: 10px 10px;
-}
-
-/* iframeのサイズ統一 */
-.top-left {
-    position: absolute;
-    top: 5px;
-    left: 10px;
+/* --- Gridレイアウトによる整列 (ご要望の修正箇所) --- */
+.info-grid {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.form-row {
+    display: flex;
     align-items: flex-start;
 }
 
-.button-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+.label {
+    width: 150px; /* ラベルの幅を固定して左面を揃える */
+    flex-shrink: 0;
+    font-weight: bold;
+    display: inline-block;
 }
 
-.top-left button {
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- 当月集計・その他エリア --- */
+#monthlySummary {
+    gap: 0;
+}
+#monthlySummary strong {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    display: block;
+}
+#monthlySummary p {
+    margin: 2px 0;
+}
+
+#commuteCost {
+    width: 80px;
+    padding: 4px;
+}
+#commuteCost::-webkit-outer-spin-button,
+#commuteCost::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#totalCommuteDisplay {
+    font-weight: bold;
+    color: #333;
+}
+
+/* --- テーブルスタイル --- */
+.attendance-table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+    background-color: #ffffff !important;
+}
+
+.attendance-table th {
+    background-color: #f8f9fa;
+    color: #555;
+    font-weight: bold;
+    padding: 12px 8px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+}
+
+.attendance-table td {
+    padding: 8px 4px;
+    border: 1px solid #ccc;
+    text-align: center;
     font-size: 14px;
-    padding: 5px 10px;
+    vertical-align: middle;
 }
 
-.top-left iframe {
+/* 行の配色 */
+.sunday,
+.holiday {
+    background-color: #fff5f5 !important;
+}
+.saturday {
+    background-color: #f0f7ff !important;
+}
+.special-row {
+    background-color: #fffbeb !important;
+}
+
+/* --- 入力要素・ボタン --- */
+input[type="time"],
+input[type="text"],
+select {
+    padding: 4px;
+}
+input[readonly] {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+}
+
+.special-add-btn,
+.special-del-btn {
+    padding: 2px 8px;
     border: none;
-    width: 120px;
-    height: 50px;
+    border-radius: 3px;
+    cursor: pointer;
+    color: white;
+}
+.special-add-btn {
+    background-color: #6c757d;
+}
+.special-del-btn {
+    background-color: #dc3545;
 }
 
-.top-right {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+.status-btn {
+    width: 65px !important; /* ここで幅を狭めます（お好みに合わせてpx値を変更してください） */
+    padding: 2px 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    display: block;
+    margin: 0 auto;
+}
+
+/* --- ヘッダー・ナビゲーション --- */
+.header-container {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 5px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
 }
 
-#top-link{
-    font-size: 16px;
-}
-
-.top-right .top-link:hover {
-    text-decoration: underline;
-}
-
-#emp{
-    margin-top: 50px;
-    margin-right: 10px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    align-items: center
-}
-
-#watch {
+/* --- コンテナ設定 --- */
+.month-nav-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 20px;
-    z-index: 10;
-    background-color: transparent; /* 必要なら背景色 */
+    gap: 10px;
+    margin: 15px 0;
 }
 
-table {
-    background-color: #f0f0f0;
-    border-collapse: collapse;
+/* --- ボタンのベーススタイル --- */
+.month-nav-btn {
+    /* 共通設定 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 4px 12px; 
+    font-size: 13px;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+}
+
+/* インラインでbackground指定がないボタン（＝青いボタン）のみに背景色を適用 */
+.month-nav-btn:not([style*="background"]) {
+    background-color: #1976d2;
+}
+
+
+/* --- モーダル --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
     width: 100%;
-
-    margin-top: 20px; /* watchとの重なり防止に余裕を追加 */
-    position: relative;
-    z-index: 1;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
 }
-
-th, td {
-    border: 1px solid #ccc;
-    padding: 5px;
-    text-align: center;
-}
-
-input[type="time"] {
-    width: 80px;
-}
-
-input[readonly], select:disabled, input:disabled {
-    background-color: #f0f0f0;
-}
-
-.special-row {
-    background-color: #ffe;
-}
-
-.chime-frame {
-    padding-bottom: 0;
-    display: flex;
-    border: none;         /* ← 枠を非表示にする */
-    margin-top: 40px;     /* ← 少し下に下げる */
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 450px;
 }

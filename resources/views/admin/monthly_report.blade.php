@@ -21,7 +21,8 @@
         
         /* 列幅の調整 */
         .col-emp { width: 80px; }
-        .col-name { width: 150px; }
+        .col-email { width: 100px; }
+        .col-name_kanji { width: 100px; }
         .col-paid { width: 100px; }
         .col-work { width: 90px; }
         .col-commute { width: 100px; }
@@ -68,7 +69,8 @@
         <thead>
             <tr>
                 <th class="col-emp">社員番号</th>
-                <th class="col-name">氏名</th>
+                <th class="col-email">メールアドレス</th>
+                <th class="col-name_kanji">氏名</th>
                 <th class="col-paid">今月の有給取得日数</th>
                 <th class="col-paid">有給残日数</th>
                 <th class="col-work">総稼働</th>
@@ -82,9 +84,12 @@
             <tr>
                 {{-- 社員番号 --}}
                 <td>{{ $user['emp_id'] }}</td>
-                
+
+                {{-- メールアドレス --}}
+                <td>{{ $user['email'] }}</td>
+
                 {{-- 氏名 --}}
-                <td style="font-weight: bold; text-align: left; padding-left: 10px;">{{ $user['name'] }}</td>
+                <td>{{ $user['name_kanji'] }}</td>
                 
                 {{-- 今月の有給取得日数（1.0 or 0.5 の合算） --}}
                 <td>{{ number_format($user['monthly_paid'], 1) }}日</td>

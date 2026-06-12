@@ -97,32 +97,36 @@ class User extends Authenticatable
     }
 
     /**
-     * 有給使用日数を計算（半休対応・承認済みデータのみ）
-     * ※attendancesテーブル内のレコードを基に集計します
+     * 有給使用日数を計算
+     * 勤怠テーブル（attendances）の実績データから「承認済み」のものを集計します
      */
     public function getUsedPaidLeaveDays()
-    {
-        // leave_applications テーブルから、このユーザーの「承認済み(1)」の有給関連申請を取得
-        // ※status: 0=申請中, 1=承認済, 2=却下 と想定
-        return DB::table('leave_applications')
-            ->where('user_id', $this->id)
-            ->where('status', 1) // 承認済みのみをカウント対象にする
-            ->whereIn('type', ['有給', '午前半休', '午後半休'])
-            ->sum('days_count'); // 保存されている 1.0 や 0.5 を直接合計する
-    }
-
+{
+    // attendances テーブルの実績を正とする（'承認済み' かつ '有給'関連）
+    return $this->attendances()
+        ->where('status', '承認済み')
+        ->whereIn('attendance_type', ['有給', '午前半休', '午後半休'])
+        ->get()
+        ->sum(function ($att) {
+            return ($att->attendance_type === '有給') ? 1.0 : 0.5;
+        });
+}
     /**
      * 有給残日数 (アクセサ)
-     * $user->paid_leave_remaining で取得可能
+     * ビュー側で $user->paid_leave_remaining と書くとここが呼ばれる
      */
     public function getPaidLeaveRemainingAttribute()
     {
+        // 1. 付与日数の計算ロジック (既存のメソッドを呼び出し)
         $total = $this->getTotalPaidLeaveDays();
+        
+        // 2. 消化日数の計算ロジック (先ほど修正した勤怠実績ベースのメソッド)
         $used = $this->getUsedPaidLeaveDays();
-
+        
         $remaining = $total - $used;
 
-        return max(0, $remaining);
+        // マイナスにならないようにし、数値として返す
+        return max(0, (float)$remaining);
     }
 
     /**

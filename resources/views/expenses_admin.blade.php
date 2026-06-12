@@ -82,7 +82,7 @@
             @forelse($adminExpenses as $ae)
             <tr class="expense-row">
                 <td>
-                    @if($ae->status == 1)
+                    @if($ae->status == 0 || $ae->status == 1)
                         <button class="status-btn btn-approve" onclick="adminUpdateStatus({{ $ae->id }}, 2)">承認</button>
                         <button class="status-btn btn-reject" onclick="adminUpdateStatus({{ $ae->id }}, 3)">却下</button>
                     @elseif($ae->status == 2)

@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // 既存の設定
         $middleware->append(\App\Http\Middleware\PreventBackHistory::class);
 
+        // ログイン済みユーザーのリダイレクト先を制御するミドルウェアを追加
+        $middleware->alias([
+            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        ]);
+
         // Inertia用の設定を追加
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
