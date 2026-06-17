@@ -1,13 +1,8 @@
 /* メイン：各モジュールをimportしてwindowに公開 */
-import {
-    saveBasicInfo,
-    saveData,
-    submitLeaveApplication,
-} from "./modules/actions.js";
+import { saveBasicInfo, saveData, submitLeaveApplication } from "./modules/actions.js";
 import { calcRowTime, calculateTotals } from "./modules/calc.js";
 import { loadData } from "./modules/calendar/tableRenderer.js";
 import * as constants from "./modules/constants.js";
-
 //各機能を window に公開 (HTMLのインラインスクリプトから呼ぶため)
 window.saveBasicInfo = saveBasicInfo;
 window.saveData = saveData;

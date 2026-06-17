@@ -262,7 +262,7 @@ class AttendanceController extends Controller
     
         // ステータスとロック状態のトグル
         if ($attendance->status === '承認済み') {
-            $attendance->status = '承認待ち';
+            $attendance->status = '登録';
             $attendance->is_locked = 0; // 編集可能に戻す
         } else {
             $attendance->status = '承認済み';

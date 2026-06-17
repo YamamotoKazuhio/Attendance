@@ -185,6 +185,22 @@ input[readonly] {
     margin: 0 auto;
 }
 
+/* 承認済みステータスボタンのスタイル */
+.status-btn.approved {
+    background-color: #28a745 !important; /* 緑色の背景 */
+    color: white !important;
+    border-color: #1e7e34 !important;
+    cursor: default;
+}
+
+/* 承認済みの行全体の入力不可スタイル */
+.row-disabled input, 
+.row-disabled select {
+    background-color: #e9ecef !important;
+    cursor: not-allowed !important;
+    pointer-events: none; /* クリックや選択を完全に無効化 */
+}
+
 /* --- ヘッダー・ナビゲーション --- */
 .header-container {
     display: flex;

@@ -62,13 +62,6 @@
             <p class="desc">システムの操作図解（PDF）を表示します。別タブで開きます。</p>
         </a>
 
-        {{-- 高機能ガイドブック (React版) 
-        <a href="{{ route('guidebook.show') }}" class="menu-card highlight" style="border-top-color: #4caf50;">
-            <span class="icon">💡</span>
-            <span class="title">構築ガイド (目次付)</span>
-            <p class="desc">目次からページを飛ばせる、React製の高機能ガイドブックを表示します。</p>
-        </a>
-         --}}
         <a href="{{ route('guidebook.menu') }}" class="menu-card">
             <span class="icon">📖</span>
             <span class="title">構築ガイド（目次）</span>
