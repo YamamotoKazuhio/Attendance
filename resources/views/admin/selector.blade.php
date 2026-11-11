@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理者メニュー</title>
     <style>
         .menu-container { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; justify-content: center; }
@@ -22,14 +23,30 @@
     </style>
 </head>
 <body>
+    @php
+        $user = Auth::user();
+        $isAdmin = $user && $user->is_admin == 1;
+        $role = optional($user->detail)->role;
+        // is_admin = 1 なら全表示、それ以外で Class_B または Class_K の場合は非表示にする
+        $showRestrictedMenu = $isAdmin || !in_array($role, ['Class_B', 'Class_K']);
+    @endphp
+
+    <div style="padding: 20px 20px 0 20px;">
+        <a href="http://portalsight.test/dashboard" class="portal-back">
+            ← ポータルサイトへ戻る
+        </a>
+    </div>
     <h1 style="text-align: center; margin-top: 40px;">管理者専用メニュー</h1>
 
     <div class="menu-container">
+        {{-- 社員名簿管理 (Class_B, Class_K は非表示) --}}
+        @if($showRestrictedMenu)
         <a href="{{ route('admin.users.index') }}" class="menu-card">
             <span class="icon">👥</span>
             <span class="title">社員名簿管理</span>
             <p class="desc">全社員の基本情報・連絡先の確認および編集を行います。</p>
         </a>
+        @endif
 
         <a href="{{ route('admin.monthly_report') }}" class="menu-card">
             <span class="icon">📊</span>
@@ -55,7 +72,8 @@
             <p class="desc">自身の勤務表、または特定社員の勤務表入力画面に戻ります。</p>
         </a>
 
-        {{--操作マニュアルカード --}}
+        {{-- 操作ガイド・構築ガイド（Class_B, Class_K は非表示） --}}
+        @if($showRestrictedMenu)
         <a href="{{ url('/manual') }}" class="menu-card manual-card">
             <span class="icon">📖</span>
             <span class="title">操作ガイド</span>
@@ -67,6 +85,7 @@
             <span class="title">構築ガイド（目次）</span>
             <p class="desc">設計書・インストール手順・実装フローの確認</p>
         </a>
+        @endif
     </div>
 
     <div style="text-align: center; margin-top: 30px;">

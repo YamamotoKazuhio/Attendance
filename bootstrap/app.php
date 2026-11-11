@@ -11,17 +11,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // 既存の設定
-        $middleware->append(\App\Http\Middleware\PreventBackHistory::class);
-
-        // ログイン済みユーザーのリダイレクト先を制御するミドルウェアを追加
-        $middleware->alias([
-            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        ]);
-
-        // Inertia用の設定を追加
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            // ログアウト後の戻るボタン対策（ブラウザキャッシュ無効化）
+            \App\Http\Middleware\PreventBackHistory::class,
+        ]);
+
+        // ミドルウェアのエイリアスを追加
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'prevent.back.history' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

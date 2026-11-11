@@ -7,7 +7,7 @@
     <title>社員情報一覧</title>
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .container { max-width: 1500px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
         .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
         .nav-back { text-decoration: none; color: #1976d2; font-weight: bold; font-size: 0.9em; }
@@ -23,19 +23,22 @@
         th { background: #f8f9fa; color: #555; font-weight: bold; position: sticky; top: 0; }
         
         /* 列幅の調整 */
-        .col-code { width: 100px; }
+        .col-code { width: 90px; }
         .col-name_kanji { width: 100px; }
-        .col-email { width: 200px; }
-        .col-date { width: 120px; }
-        .col-years { width: 80px; }
-        .col-paid { width: 80px; }
-        .col-admin { width: 70px; }
-        .col-action { width: 120px; }
+        .col-dept { width: 110px; }
+        .col-role { width: 100px; }
+        .col-email { width: 180px; }
+        .col-date { width: 110px; }
+        .col-years { width: 75px; }
+        .col-paid { width: 75px; }
+        .col-admin { width: 65px; }
+        .col-action { width: 110px; }
 
         tr:hover { background-color: #f1f8ff; }
         .bg-retired { background-color: #f9f9f9; color: #999; }
 
         .text-center { text-align: center; }
+        .text-right { text-align: right; }
         
         .badge-admin { 
             color: #d32f2f; 
@@ -50,6 +53,14 @@
             border-radius: 3px;
             margin-left: 4px;
         }
+        .badge-role {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
 
         .btn-action { text-decoration: none; font-weight: bold; margin-right: 8px; }
         .btn-edit { color: #1976d2; }
@@ -60,12 +71,12 @@
 <body>
     <div class="container">
         <div class="header-area">
-            <h2 style="margin: 0;">👥 社員情報一覧</h2>
+            <h2 style="margin: 0;">👥 社員情報一覧（組織・ロール権限管理）</h2>
             <a href="{{ route('admin.menu') }}" class="nav-back">← 管理メニューへ戻る</a>
         </div>
         
         <div style="margin: 20px 0; display: flex; justify-content: flex-end;">
-            <a href="{{ route('admin.register') }}"
+            <a href="{{ route('admin.users.create') }}"
                 style="background-color: #28a745; color: white; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px;">
                 <span style="font-size: 18px;">+</span> 新規ユーザー登録
             </a>
@@ -87,10 +98,12 @@
                 <tr>
                     <th class="col-code">社員番号</th>
                     <th class="col-name_kanji">氏名</th>
+                    <th class="col-dept">所属部署</th>
+                    <th class="col-role">職域(ロール)</th>
                     <th class="col-email">メールアドレス</th>
                     <th class="col-date">入社日</th>
                     <th class="col-years">勤続年数</th>
-                    <th class="col-paid">有給残数</th>
+                    <th class="col-paid">有給残</th>
                     <th class="col-admin text-center">管理者</th>
                     <th class="col-action text-center">操作</th>
                 </tr>
@@ -98,12 +111,12 @@
             <tbody>
                 @foreach($users as $user)
                 <tr class="{{ $user->trashed() ? 'bg-retired' : '' }}">
-                    {{-- 社員番号: user_details の値を優先 --}}
+                    {{-- 社員番号 --}}
                     <td class="text-center">
                         {{ $user->detail->employee_code ?? ($user->employee_code ?? '---') }}
                     </td>
 
-                    {{-- 氏名: user_details の name_kanji を優先 --}}
+                    {{-- 氏名 --}}
                     <td>
                         {{ $user->detail->name_kanji ?? ($user->name ?? '---') }}
                         @if($user->trashed())
@@ -111,19 +124,33 @@
                         @endif
                     </td>
 
-                    {{-- アカウント名: usersテーブルのemail --}}
+                    {{-- 所属部署 --}}
+                    <td>
+                        {{ $user->detail->department ?? '未設定' }}
+                    </td>
+
+                    {{-- 職域 (ロール) --}}
+                    <td class="text-center">
+                        @if(optional($user->detail)->role)
+                            <span class="badge-role">{{ $user->detail->role }}</span>
+                        @else
+                            <span style="color: #aaa;">未設定</span>
+                        @endif
+                    </td>
+
+                    {{-- メールアドレス --}}
                     <td>{{ $user->email }}</td>
 
-                    {{-- 入社日: Controllerで計算済みの値 --}}
+                    {{-- 入社日 --}}
                     <td>{{ $user->formatted_joined_at }}</td>
 
-                    {{-- 勤続年数: Controllerで計算済みの値 --}}
+                    {{-- 勤続年数 --}}
                     <td class="text-right">{{ $user->experience_years }}年</td>
 
-                    {{-- 有給残数: Controllerで計算済みの値 --}}
+                    {{-- 有給残数 --}}
                     <td class="text-right">{{ $user->remaining_paid }}日</td>
 
-                    {{-- 管理者フラグ --}}
+                    {{-- 管理者フラグ (システム部なら自動で「○」) --}}
                     <td class="text-center">
                     @if($user->is_admin)
                         <span class="badge-admin">○</span>

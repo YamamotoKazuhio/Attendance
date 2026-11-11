@@ -20,6 +20,7 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $targetUser = $user;
         $query = $request->input('search_query');
@@ -52,11 +53,6 @@ class AttendanceController extends Controller
 
         // 祝日データの取得
         $holidays = $this->getPublicHolidays();
-
-        // ★更新ポイント: ビューで「現在残高」を正確に表示するための計算値を追加
-        // Userモデルのアクセサ (getPaidLeaveRemainingAttribute) を呼び出し、
-        // ビュー側で `display_remaining_days` として参照できるようにします。
-        //$targetUser->display_remaining_days = $targetUser->paid_leave_remaining;
 
         return view('attendance', compact('targetUser', 'targetMonth', 'attendances', 'holidays'));
     }
@@ -127,12 +123,12 @@ class AttendanceController extends Controller
             return response()->json(['message' => '保存エラー: ' . $e->getMessage()], 500);
         }
     }
+
     /**
      * 基本情報（所属・通勤費）の更新
      */
     public function updateBasicInfo(Request $request)
     {
-        // ログインユーザーではなく、JSから送られた user_id を使用する
         $userId = $request->input('user_id'); 
         $department = $request->input('department');
         $commuteFee = $request->input('commute_fee');
@@ -154,34 +150,53 @@ class AttendanceController extends Controller
         }
     }
 
-
     /**
      * 管理者用：月次レポート集計一覧
      */
     public function adminMonthlyReport(Request $request)
     {
-        if (!Auth::user()->is_admin) abort(403);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $user->load('detail');
+        $role = optional($user->detail)->role;
+
+        // is_admin = 1 または ロールが Class_B / Class_K の場合のみ許可
+        $canAccess = $user->is_admin == 1 || in_array($role, ['Class_B', 'Class_K']);
+
+        if (!$canAccess) {
+            abort(403, '月次集計画面へのアクセス権限がありません。');
+        }
 
         $targetMonth = substr($request->input('month', date('Y-m')), 0, 7);
 
-        // ユーザーデータと今月の勤怠をまとめて取得
-        $users = User::with(['detail', 'attendances' => function ($q) use ($targetMonth) {
+        // ユーザーデータと今月の勤怠をまとめて取得するクエリの構築
+        $query = User::with(['detail', 'attendances' => function ($q) use ($targetMonth) {
             $q->where('work_date', 'LIKE', "{$targetMonth}%");
-        }])->get();
+        }]);
 
-        $usersData = $users->map(function ($user) use ($targetMonth) {
-            $monthData = $user->attendances;
-            $detail = $user->detail;
+        // 【要件の絞り込み】
+        // is_admin = 0 かつ Class_B または Class_K の場合は、自身と同じ部署のユーザーのみに限定する
+        if ($user->is_admin != 1 && in_array($role, ['Class_B', 'Class_K'])) {
+            $myDepartment = optional($user->detail)->department;
+            $query->whereHas('detail', function ($q) use ($myDepartment) {
+                $q->where('department', $myDepartment);
+            });
+        }
+
+        $users = $query->get();
+
+        $usersData = $users->map(function ($targetUser) use ($targetMonth) {
+            $monthData = $targetUser->attendances;
+            $detail = $targetUser->detail;
 
             // 1. 今月の有給取得日数の集計
-            // 「有給」は1日、「午前半休」「午後半休」は0.5日としてカウントするロジック
             $monthlyPaid = $monthData->reduce(function ($carry, $att) {
                 if ($att->attendance_type === '有給') return $carry + 1.0;
                 if (in_array($att->attendance_type, ['午前半休', '午後半休'])) return $carry + 0.5;
                 return $carry;
             }, 0);
 
-            // 2. 基本情報の取得
+            // 2. 基本情報の集計
             $workDays = $monthData->whereIn('attendance_type', ['出勤', '振替出勤', '現場出勤', '通常勤務'])->count();
             $dailyCommute = (float)($detail->commute_fee ?? 0);
             
@@ -189,16 +204,15 @@ class AttendanceController extends Controller
             $isFinalized = $monthData->contains('is_locked', 1);
 
             return [
-                'id'               => $user->id,
-                'email'            => $user->email,
+                'id'               => $targetUser->id,
+                'email'            => $targetUser->email,
                 'emp_id'           => $detail->employee_code ?? '-',
-                'name'             => $user->name,
+                'name'             => $targetUser->name,
                 'name_kanji'       => $detail->name_kanji ?? '',
                 'department'       => $detail->department ?? '-',
                 'work_days'        => $workDays,
                 'monthly_paid'     => $monthlyPaid,
-                // 3. 有給残日数はモデルのアクセサを利用して動的に計算する
-                'remaining_paid'   => $user->paid_leave_remaining, 
+                'remaining_paid'   => $targetUser->paid_leave_remaining, 
                 'total_work'       => $monthData->sum('work_time'),
                 'total_ot'         => $monthData->sum('overtime'),
                 'total_commute'    => $workDays * $dailyCommute,
@@ -260,13 +274,12 @@ class AttendanceController extends Controller
     {
         $attendance = Attendance::findOrFail($id);
     
-        // ステータスとロック状態のトグル
         if ($attendance->status === '承認済み') {
             $attendance->status = '登録';
-            $attendance->is_locked = 0; // 編集可能に戻す
+            $attendance->is_locked = 0; 
         } else {
             $attendance->status = '承認済み';
-            $attendance->is_locked = 1; // 編集不可にする
+            $attendance->is_locked = 1; 
         }
     
         $attendance->save();

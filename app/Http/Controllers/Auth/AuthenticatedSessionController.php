@@ -24,22 +24,24 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // 1. 認証を実行
+        
         $request->authenticate();
-    
-        // 2. セッションを再生成
         $request->session()->regenerate();
 
-        // 3. 権限に応じてリダイレクト先を振り分け
-        // 管理者の場合
-        if ($request->user()->is_admin) {
-            return redirect()->route('admin.menu');
-        }
+        // ログインしたユーザーと詳細情報（ロール）を取得
+        $user = $request->user();
+        $user->load('detail');
+        
+        $role = optional($user->detail)->role;
+        $is_admin = (int)$user->is_admin;
 
-        // 一般ユーザーの場合
-        // intended() を使用することで、ログイン前にアクセスしようとしていたURLがある場合はそこへ、
-        // なければ指定したルート（attendance.index）へ遷移します
-        return redirect()->intended(route('attendance.index', absolute: false));
+        // 管理者（is_admin = 1）またはロールが Class_B / Class_K の場合は管理者メニューへ
+        if ($is_admin === 1 || in_array($role, ['Class_B', 'Class_K'])) {
+            return redirect()->intended(route('admin.menu'));
+        }
+    
+        // 一般ユーザー（Class_NA等）の場合は勤務表画面へ
+        return redirect()->intended(route('attendance.index'));
     }
 
     /**

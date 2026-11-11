@@ -11,6 +11,8 @@
     <header class="header-container">
         <div class="header-left">
             <span>ログイン中: {{ Auth::user()->name }} さん</span>
+            {{-- ポータルサイトへ戻るリンク --}}
+            <a href="http://portalsight.test/dashboard" class="portal-back-link" style="margin-left: 15px; color: #2563eb; text-decoration: underline;">ポータルへ戻る</a>
             {{-- 管理者の場合のみ表示 --}}
             @if(Auth::user()->is_admin)
             <a href="{{ url('/admin/menu') }}" class="admin-menu-link" style="margin-left: 15px;">管理者メニューへ</a>

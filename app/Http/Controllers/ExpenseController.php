@@ -1,7 +1,5 @@
 <?php
 
-/* app/Http/Controllers/ExpenseController.php */
-
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
@@ -40,11 +38,31 @@ class ExpenseController extends Controller
      */
     public function adminIndex()
     {
-        // 経費データと一緒に user とその先の detail (社員番号・漢字氏名用) もロード
-        $adminExpenses = Expense::with(['user.detail'])
-            ->where('status', '>=', 0)
-            ->orderBy('updated_at', 'desc')
-            ->get();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $user->load('detail');
+        $role = optional($user->detail)->role;
+
+        // 権限チェック：is_admin = 1 または ロールが Class_B / Class_K のみ許可
+        $canAccess = $user->is_admin == 1 || in_array($role, ['Class_B', 'Class_K']);
+
+        if (!$canAccess) {
+            abort(403, '経費承認パネルへのアクセス権限がありません。');
+        }
+
+        // 経費データと一緒に user とその先の detail をロード
+        $query = Expense::with(['user.detail'])
+            ->where('status', '>=', 0);
+
+        // is_admin = 0 かつ Class_B または Class_K の場合は、自身と同じ部署のユーザーの申請のみに限定する
+        if ($user->is_admin != 1 && in_array($role, ['Class_B', 'Class_K'])) {
+            $myDepartment = optional($user->detail)->department;
+            $query->whereHas('user.detail', function ($q) use ($myDepartment) {
+                $q->where('department', $myDepartment);
+            });
+        }
+
+        $adminExpenses = $query->orderBy('updated_at', 'desc')->get();
 
         return view('expenses_admin', compact('adminExpenses'));
     }
@@ -92,8 +110,6 @@ class ExpenseController extends Controller
         $user = Auth::user();
 
         // 権限チェック：管理者であるか、もしくはデータの所有者本人のみ許可
-        // 修正: Boolean値として判定する
-        // 管理者であれば true、自分の申請であれば true になるようにします
         if (!$user->is_admin && $user->id !== $expense->user_id) {
             return response()->json(['error' => '権限がありません'], 403);
         }
