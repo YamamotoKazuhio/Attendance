@@ -1,4 +1,4 @@
-{{-- resources/views/admin/users/index.blade.php--}}
+{{-- resources/views/admin/users/index.blade.php --}}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -13,13 +13,23 @@
         .nav-back { text-decoration: none; color: #1976d2; font-weight: bold; font-size: 0.9em; }
         .nav-back:hover { text-decoration: underline; }
         
+        /* 検索フォームエリアのスタイル */
+        .search-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 20px; }
+        .search-group { display: flex; flex-direction: column; gap: 4px; }
+        .search-group label { font-size: 0.8em; font-weight: bold; color: #555; }
+        .search-input, .search-select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; width: 160px; }
+        .search-btn { background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.9em; height: 35px; }
+        .search-btn:hover { background: #115293; }
+        .reset-btn { background: #e0e0e0; color: #333; border: none; padding: 8px 14px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9em; height: 35px; display: inline-flex; align-items: center; box-sizing: border-box; }
+        .reset-btn:hover { background: #d0d0d0; }
+
         .tab-area { margin-bottom: 20px; display: flex; gap: 10px; }
         .tab-btn { padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 0.9em; font-weight: bold; }
         .tab-active { background: #1976d2; color: white; }
         .tab-inactive { background: #e0e0e0; color: #666; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: left; word-break: break-all; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 10px 8px; text-align: left; word-break: break-all; font-size: 0.9em; }
         th { background: #f8f9fa; color: #555; font-weight: bold; position: sticky; top: 0; }
         
         /* 列幅の調整 */
@@ -66,6 +76,14 @@
         .btn-edit { color: #1976d2; }
         .btn-delete { color: #e53935; border: none; background: none; cursor: pointer; padding: 0; font-family: inherit; font-size: inherit; }
         .btn-restore { color: #388e3c; border: none; background: none; cursor: pointer; padding: 0; font-family: inherit; font-size: inherit; }
+
+        /* ページネーション用スタイル（間延び防止・すっきり表示） */
+        .pagination-area { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.9em; color: #666; }
+        .pagination-links { display: flex; gap: 6px; align-items: center; }
+        .pagination-links a, .pagination-links span { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; text-decoration: none; color: #333; background: #fff; }
+        .pagination-links a:hover { background: #f1f8ff; border-color: #1976d2; color: #1976d2; }
+        .pagination-links .active { background: #1976d2; color: white; border-color: #1976d2; }
+        .pagination-links .disabled { color: #aaa; background: #f9f9f9; border-color: #e0e0e0; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -75,19 +93,65 @@
             <a href="{{ route('admin.menu') }}" class="nav-back">← 管理メニューへ戻る</a>
         </div>
         
-        <div style="margin: 20px 0; display: flex; justify-content: flex-end;">
+        <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
             <a href="{{ route('admin.users.create') }}"
                 style="background-color: #28a745; color: white; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px;">
                 <span style="font-size: 18px;">+</span> 新規ユーザー登録
             </a>
         </div>
+
+        {{-- ▼ 検索フォームエリア（社員番号・氏名・所属部署プルダウン・職域プルダウン） --}}
+        <form action="{{ route('admin.users.index') }}" method="GET" class="search-form">
+            {{-- タブの状態を維持するための隠しフィールド --}}
+            @if(request('tab') === 'all')
+                <input type="hidden" name="tab" value="all">
+            @endif
+
+            <div class="search-group">
+                <label>社員番号</label>
+                <input type="text" name="employee_code" value="{{ request('employee_code') }}" placeholder="例: EMP001" class="search-input">
+            </div>
+
+            <div class="search-group">
+                <label>氏名（漢字）</label>
+                <input type="text" name="name" value="{{ request('name') }}" placeholder="例: 山田" class="search-input">
+            </div>
+
+            <div class="search-group">
+                <label>所属部署</label>
+                <select name="department" class="search-select">
+                    <option value="">すべて</option>
+                    <option value="システム部" {{ request('department') === 'システム部' ? 'selected' : '' }}>システム部</option>
+                    <option value="総務部" {{ request('department') === '総務部' ? 'selected' : '' }}>総務部</option>
+                    <option value="営業部" {{ request('department') === '営業部' ? 'selected' : '' }}>営業部</option>
+                    <option value="開発部" {{ request('department') === '開発部' ? 'selected' : '' }}>開発部</option>
+                    <option value="製造部" {{ request('department') === '製造部' ? 'selected' : '' }}>製造部</option>
+                </select>
+            </div>
+
+            <div class="search-group">
+                <label>職域 (ロール)</label>
+                <select name="role" class="search-select">
+                    <option value="">すべて</option>
+                    <option value="Class_B" {{ request('role') === 'Class_B' ? 'selected' : '' }}>Class_B</option>
+                    <option value="Class_K" {{ request('role') === 'Class_K' ? 'selected' : '' }}>Class_K</option>
+                    <option value="Class_NA" {{ request('role') === 'Class_NA' ? 'selected' : '' }}>Class_NA</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="search-btn">検索</button>
+                <a href="{{ route('admin.users.index', request('tab') ? ['tab' => request('tab')] : []) }}" class="reset-btn">リセット</a>
+            </div>
+        </form>
+        {{-- ▲ 検索フォームここまで --}}
         
         <div class="tab-area">
-            <a href="{{ route('admin.users.index') }}" 
+            <a href="{{ route('admin.users.index', array_merge(request()->except(['tab', 'page']), [])) }}" 
                 class="tab-btn {{ request('tab') !== 'all' ? 'tab-active' : 'tab-inactive' }}">
                 在職中
             </a>
-            <a href="{{ route('admin.users.index', ['tab' => 'all']) }}" 
+            <a href="{{ route('admin.users.index', array_merge(request()->except(['page']), ['tab' => 'all'])) }}" 
                 class="tab-btn {{ request('tab') === 'all' ? 'tab-active' : 'tab-inactive' }}">
                 すべて（退職者含む）
             </a>
@@ -109,7 +173,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($users as $user)
+                @forelse($users as $user)
                 <tr class="{{ $user->trashed() ? 'bg-retired' : '' }}">
                     {{-- 社員番号 --}}
                     <td class="text-center">
@@ -150,7 +214,7 @@
                     {{-- 有給残数 --}}
                     <td class="text-right">{{ $user->remaining_paid }}日</td>
 
-                    {{-- 管理者フラグ (システム部なら自動で「○」) --}}
+                    {{-- 管理者フラグ --}}
                     <td class="text-center">
                     @if($user->is_admin)
                         <span class="badge-admin">○</span>
@@ -178,9 +242,54 @@
                         @endif
                     </td>
                 </tr>
-            @endforeach
+                @empty
+                <tr>
+                    <td colspan="10" class="text-center" style="padding: 30px; color: #888;">
+                        該当する社員データが見つかりませんでした。
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
+
+        {{-- ▼ ページネーションエリア（「先頭に戻る」「前のページ」「次ページへ」ボタン搭載） --}}
+        @if(method_exists($users, 'hasPages') && $users->hasPages())
+        <div class="pagination-area">
+            <div>
+                全 <b>{{ $users->total() }}</b> 件中 / 
+                <b>{{ $users->firstItem() }}</b> 〜 <b>{{ $users->lastItem() }}</b> 件目を表示
+            </div>
+            <div class="pagination-links">
+                {{-- 先頭に戻るボタン --}}
+                @if($users->onFirstPage())
+                    <span class="disabled">先頭に戻る</span>
+                @else
+                    <a href="{{ $users->url(1) }}">先頭に戻る</a>
+                @endif
+
+                {{-- 前のページボタン --}}
+                @if($users->onFirstPage())
+                    <span class="disabled">前のページ</span>
+                @else
+                    <a href="{{ $users->previousPageUrl() }}">前のページ</a>
+                @endif
+
+                {{-- 現在のページ位置情報 --}}
+                <span style="padding: 6px 10px; background: #f8f9fa;">
+                    <b>{{ $users->currentPage() }}</b> / {{ $users->lastPage() }} ページ
+                </span>
+
+                {{-- 次ページへボタン --}}
+                @if($users->hasMorePages())
+                    <a href="{{ $users->nextPageUrl() }}">次ページへ</a>
+                @else
+                    <span class="disabled">次ページへ</span>
+                @endif
+            </div>
+        </div>
+        @endif
+        {{-- ▲ ページネーションここまで --}}
+
     </div>
 </body>
 </html>

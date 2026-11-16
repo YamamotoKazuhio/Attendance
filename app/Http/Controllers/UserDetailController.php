@@ -92,7 +92,7 @@ class UserDetailController extends Controller
     }
 
     /**
-     * 管理者用：社員一覧
+     * 管理者用：社員一覧（検索・ページネーション対応）
      */
     public function adminIndex(Request $request)
     {
@@ -103,9 +103,47 @@ class UserDetailController extends Controller
             $query->withTrashed();
         }
 
-        $users = $query->get();
+        // 1. 社員番号による絞り込み検索
+        if ($request->filled('employee_code')) {
+            $code = $request->input('employee_code');
+            $query->whereHas('detail', function ($q) use ($code) {
+                $q->where('employee_code', 'LIKE', "%{$code}%");
+            });
+        }
+
+        // 2. 氏名（漢字 または ユーザー名）による絞り込み検索
+        if ($request->filled('name')) {
+            $name = $request->input('name');
+            $query->where(function ($q) use ($name) {
+                $q->where('name', 'LIKE', "%{$name}%")
+                  ->orWhereHas('detail', function ($subQ) use ($name) {
+                      $subQ->where('name_kanji', 'LIKE', "%{$name}%");
+                  });
+            });
+        }
+
+        // 3. 所属部署（プルダウン選択）による絞り込み検索
+        if ($request->filled('department')) {
+            $department = $request->input('department');
+            $query->whereHas('detail', function ($q) use ($department) {
+                $q->where('department', $department);
+            });
+        }
+
+        // 4. 職域 (ロール) による絞り込み検索
+        if ($request->filled('role')) {
+            $role = $request->input('role');
+            $query->whereHas('detail', function ($q) use ($role) {
+                $q->where('role', $role);
+            });
+        }
+
+        // 間延び防止のため、1ページあたり15件でページネーション化し、検索パラメータを維持
+        $users = $query->paginate(15)->appends($request->query());
+
         $now = \Carbon\Carbon::now();
 
+        // ページネーションで取得したコレクション（$users）の各要素をループ処理
         foreach ($users as $user) {
             $detail = $user->detail;
             $joinedAt = optional($detail)->joined_at;
@@ -121,12 +159,12 @@ class UserDetailController extends Controller
                 $user->experience_years = '0.0';
             }
 
-            // 有給残数の計算（修正済み）
+            // 有給残数の計算
             $totalGranted = $user->calculateTotalGrantedDays();
             $usedPaid = $user->getUsedPaidLeaveDays();
             $user->remaining_paid = $totalGranted - $usedPaid;
 
-            // 管理者フラグの判定（システム部所属なら自動で○になる）
+            // 管理者フラグの判定
             $user->admin_label = $user->is_admin ? '○' : '';
         }
 

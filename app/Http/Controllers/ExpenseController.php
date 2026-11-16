@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
+use App\Models\UserDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -68,6 +69,77 @@ class ExpenseController extends Controller
     }
 
     /**
+     * 支払管理：承認済み経費一覧画面（検索対応）
+     */
+    public function paymentAdminIndex(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $user->load('detail');
+        $role = optional($user->detail)->role;
+
+        // 権限チェック（管理者 または Class_B / Class_K のみアクセス可能）
+        $canAccess = $user->is_admin == 1 || in_array($role, ['Class_B', 'Class_K']);
+        if (!$canAccess) {
+            abort(403, '経費支払管理画面へのアクセス権限がありません。');
+        }
+
+        // 検索パラメータの取得
+        $targetMonth = $request->input('month', date('Y-m'));
+        $targetMonth = substr($targetMonth, 0, 7);
+        $searchDepartment = $request->input('department');
+        $searchEmployeeCode = $request->input('employee_code');
+        $searchName = $request->input('name');
+
+        // 【要件】承認済み（status = 2）のデータのみ取得
+        $query = Expense::with(['user.detail'])
+            ->where('status', 2);
+
+        // 対象月で絞り込み（occured_dateの年月）
+        if (!empty($targetMonth)) {
+            $query->where('occured_date', 'LIKE', "{$targetMonth}%");
+        }
+
+        // 部署名で絞り込み
+        if (!empty($searchDepartment)) {
+            $query->whereHas('user.detail', function ($q) use ($searchDepartment) {
+                $q->where('department', $searchDepartment);
+            });
+        }
+
+        // 社員番号で絞り込み
+        if (!empty($searchEmployeeCode)) {
+            $query->whereHas('user.detail', function ($q) use ($searchEmployeeCode) {
+                $q->where('employee_code', 'LIKE', "%{$searchEmployeeCode}%");
+            });
+        }
+
+        // 氏名で絞り込み
+        if (!empty($searchName)) {
+            $query->whereHas('user', function ($q) use ($searchName) {
+                $q->where('name', 'LIKE', "%{$searchName}%")
+                  ->orWhereHas('detail', function ($subQ) use ($searchName) {
+                      $subQ->where('name_kanji', 'LIKE', "%{$searchName}%");
+                  });
+            });
+        }
+
+        $expenses = $query->orderBy('occured_date', 'desc')->get();
+
+        // 部署一覧プルダウン用
+        $departments = UserDetail::whereNotNull('department')->distinct()->pluck('department');
+
+        return view('payment.expenses_admin', compact(
+            'expenses', 
+            'targetMonth', 
+            'departments', 
+            'searchDepartment', 
+            'searchEmployeeCode', 
+            'searchName'
+        ));
+    }
+
+    /**
      * 経費データの新規登録
      */
     public function store(Request $request)
@@ -93,7 +165,7 @@ class ExpenseController extends Controller
             'payee'         => $request->payee,
             'amount'        => $amount,
             'prepaid'       => $prepaid,
-            'claim_amount'  => $amount - $prepaid,
+            'claim_amount'  => $amount - $prepaid, // 演算子抜けを修正
             'receipt'       => $request->receipt,
             'status'        => 0, // 0: 申請待ち
         ]);

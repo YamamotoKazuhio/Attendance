@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         // UserSeederを呼び出す
         $this->call([
             UserSeeder::class,
+            PayrollSettingSeeder::class,
         ]);
     }
 }

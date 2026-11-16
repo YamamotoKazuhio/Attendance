@@ -11,22 +11,37 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 1. users テーブルの作成（追加カラムをすべて統合）
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('employee_code')->unique()->nullable(); // 社員番号
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // 追加されたカラム群
+            $table->boolean('is_admin')->default(false);           // 管理者フラグ
+            $table->string('department')->nullable();              // 所属
+            $table->integer('daily_commute_fee')->default(0);      // 日額通勤費
+            $table->decimal('paid_leave_remaining', 4, 1)->default(10.0); // 有給残数
+            $table->date('onboarding_date')->nullable();           // 入社日等
+
             $table->rememberToken();
             $table->timestamps();
+            
+            // 論理削除（softDeletes）
+            $table->softDeletes();
         });
 
+        // 2. パスワードリセットトークンテーブル
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
+        // 3. セッションテーブル
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->index();

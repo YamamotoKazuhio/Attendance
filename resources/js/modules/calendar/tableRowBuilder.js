@@ -69,42 +69,39 @@ export function createRow(
     // 承認済みの場合、操作不能用のクラスを付与
     if (isApproved) tr.classList.add("row-disabled");
 
-    // [0] ステータスセル
+    // [0] ステータスセル（管理者・一般ユーザー共通でJSによる非同期ステータス切り替えに統一）
     const statusCell = document.createElement("td");
+    const statusBtn = document.createElement("button");
+    renderStatusButton(statusBtn, dbEntry, isApproved);
     
-    if (isAdmin) {
-        // 管理者：ボタンを押すとPOSTリクエストでステータスが切り替わる
-        const form = document.createElement("form");
-        form.action = `/admin/attendance/toggle-status/${dbEntry?.id || 0}`;
-        form.method = "POST";
-        form.style.margin = "0";
-        form.innerHTML = `<input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">`;
-        
-        const button = document.createElement("button");
-        button.type = "submit";
-        // 配色を共通化
-        renderStatusButton(button, dbEntry, isApproved);
-        
-        form.appendChild(button);
-        statusCell.appendChild(form);
+    // 承認済みの場合はボタン自体を無効化（ただし管理者の場合は必要に応じて操作できるようにすることも可能ですが、基本仕様に合わせます）
+    if (isApproved && !isAdmin) {
+        statusBtn.disabled = true;
     } else {
-        // 一般ユーザー：ボタンを押すとJSでステータスが切り替わる
-        const statusBtn = document.createElement("button");
-        renderStatusButton(statusBtn, dbEntry, isApproved);
-        
-        // 承認済みの場合はボタン自体を無効化（ユーザーは操作不可）
-        if (isApproved) {
-            statusBtn.disabled = true;
-        } else {
-            statusBtn.onclick = async () => {
-                const isNowRegistered = statusBtn.textContent === "登録";
-                statusBtn.textContent = isNowRegistered ? "承認待ち" : "登録";
-                statusBtn.style.setProperty("background-color", statusBtn.textContent === "承認待ち" ? "orange" : "", "important");
-                if (typeof window.saveData === "function") await window.saveData();
-            };
-        }
-        statusCell.appendChild(statusBtn);
+        statusBtn.onclick = async () => {
+            const currentText = statusBtn.textContent;
+            let nextText = "承認待ち";
+
+            if (currentText === "承認待ち") {
+                nextText = "登録";
+            } else if (currentText === "承認済み" && isAdmin) {
+                nextText = "登録";
+            }
+
+            statusBtn.textContent = nextText;
+            statusBtn.style.setProperty(
+                "background-color", 
+                nextText === "承認待ち" ? "orange" : (nextText === "承認済み" ? "#28a745" : ""), 
+                "important"
+            );
+
+            // 共通の非同期保存処理を呼び出し
+            if (typeof window.saveData === "function") {
+                await window.saveData();
+            }
+        };
     }
+    statusCell.appendChild(statusBtn);
     tr.appendChild(statusCell);
 
     // [1] 日付

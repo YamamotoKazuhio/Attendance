@@ -8,18 +8,39 @@
     @vite(['resources/js/Attendance.js'])
 </head>
 <body>
+    @php
+        $currentUser = Auth::user();
+        $currentRole = optional($currentUser->detail)->role;
+        $currentDepartment = optional($currentUser->detail)->department;
+        $isAdmin = $currentUser->is_admin == 1;
+        
+        $canShowAdminMenu = $isAdmin || in_array($currentRole, ['Class_B', 'Class_K']);
+
+        // 総務部所属かつ class_NA（かつ管理者ではない）かどうか
+        $isSoumuClassNA = (!$isAdmin && $currentDepartment === '総務部' && strcasecmp($currentRole, 'Class_NA') === 0);
+
+        // 総務部以外で class_NA（またはロールが設定されていない等）の一般ユーザーかどうか
+        $isOtherClassNA = (!$isAdmin && $currentDepartment !== '総務部' && (strcasecmp($currentRole, 'Class_NA') === 0 || empty($currentRole)));
+    @endphp
+
     <header class="header-container">
         <div class="header-left">
             <span>ログイン中: {{ Auth::user()->name }} さん</span>
-            {{-- ポータルサイトへ戻るリンク --}}
-            <a href="http://portalsight.test/dashboard" class="portal-back-link" style="margin-left: 15px; color: #2563eb; text-decoration: underline;">ポータルへ戻る</a>
-            {{-- 管理者の場合のみ表示 --}}
-            @if(Auth::user()->is_admin)
+            
+            {{-- 総務部 class_NA ユーザーの場合は「総務メニューに戻る」を表示 --}}
+            @if($isSoumuClassNA)
+                <a href="{{ route('soumu.menu') }}" class="portal-back-link" style="margin-left: 15px; color: #2563eb; text-decoration: underline;">総務メニューに戻る</a>
+            @endif
+
+            {{-- 総務部以外で class_NA のユーザーの場合は「ポータルに戻る」を表示 --}}
+            @if($isOtherClassNA)
+                <a href="{{ route('dashboard') }}" class="dashboard-link" style="margin-left: 15px; color: #2563eb; text-decoration: underline;">ポータルに戻る</a>
+            @endif
+            
+            {{-- 管理者、または部署マネージャー（Class_B / Class_K）の場合に表示 --}}
+            @if($canShowAdminMenu)
             <a href="{{ url('/admin/menu') }}" class="admin-menu-link" style="margin-left: 15px;">管理者メニューへ</a>
             @endif
-        </div>
-        <div class="header-center">
-            <h2>社内ポータルシステム</h2>
         </div>
         <div class="header-right">
             <form action="{{ route('logout') }}" method="POST">
@@ -52,13 +73,9 @@
                     <div class="info-left">
                         氏名: {{ $targetUser->detail->name_kanji ?? $targetUser->name }}<br>
                         社員コード: {{ $targetUser->detail->employee_code ?? '未設定' }}<br>
-                        所属部署:
-                        <select id="department" onchange="saveBasicInfo()">
-                            <option value="">未設定</option>
-                            @foreach(['開発部', '営業部', '総務部', '人事部', '経理部'] as $dept)
-                            <option value="{{ $dept }}" {{ ($targetUser->detail->department ?? '') === $dept ? 'selected' : '' }}>{{ $dept }}</option>
-                            @endforeach
-                        </select>
+                        所属部署: {{ $targetUser->detail->department ?? '未設定' }}
+                        {{-- 既存のJS（saveBasicInfo）との互換性を保つための隠しフィールド --}}
+                        <input type="hidden" id="department" value="{{ $targetUser->detail->department ?? '' }}">
                     </div>
 
                     <div class="info-right">
@@ -115,8 +132,8 @@
     @vite(['resources/js/Attendance.js'])
 
     <script>
-        // 管理者かどうかをJSに渡す
-        window.isAdmin = {{Auth::user()->is_admin ? 'true' : 'false' }};
+        // 管理者またはマネージャー権限があるかどうかをJSに渡す
+        window.isAdmin = {{ $canShowAdminMenu ? 'true' : 'false' }};
 
         // サーバーから渡されたデータをセット
         window.savedDataFromServer = @json($attendances);

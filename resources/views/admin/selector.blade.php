@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者メニュー</title>
+    <title>管理者メニュー 勤怠・経費管理</title>
     <style>
         .menu-container { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; justify-content: center; }
         .menu-card { 
@@ -36,7 +36,7 @@
             ← ポータルサイトへ戻る
         </a>
     </div>
-    <h1 style="text-align: center; margin-top: 40px;">管理者専用メニュー</h1>
+    <h1 style="text-align: center; margin-top: 40px;">勤怠・経費管理システム 管理者メニュー</h1>
 
     <div class="menu-container">
         {{-- 社員名簿管理 (Class_B, Class_K は非表示) --}}
@@ -66,9 +66,17 @@
             <p class="desc">提出された経費精算書の確認と承認・却下を行います。</p>
         </a>
 
+        @if($isAdmin)
+        <a href="{{ route('payment.admin') }}" class="menu-card">
+            <span class="icon">💳</span>
+            <span class="title">支払管理</span>
+            <p class="desc">支払処理の確認と管理を行います。</p>
+        </a>
+        @endif
+        
         <a href="{{ route('attendance.index') }}" class="menu-card">
             <span class="icon">📅</span>
-            <span class="title">勤務表画面へ</span>
+            <span class="title">勤務表画面</span>
             <p class="desc">自身の勤務表、または特定社員の勤務表入力画面に戻ります。</p>
         </a>
 

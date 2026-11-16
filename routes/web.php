@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Http\Controllers\UserDetailController;
+use App\Http\Controllers\PayrollController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -43,18 +44,33 @@ Route::get('/sso-login', function (Request $request) {
         $request->session()->regenerate();
         
         $role = optional($user->detail)->role;
+        $department = optional($user->detail)->department; // 部署を取得
         $is_admin = (int)$user->is_admin;
 
         // ログに出力してどの条件にマッチするかターミナル（storage/logs/laravel.log）で確認できるようにする
-        \Illuminate\Support\Facades\Log::info("SSO判定: email={$user->email}, is_admin={$is_admin}, role={$role}");
+        \Illuminate\Support\Facades\Log::info("SSO判定: email={$user->email}, dept={$department}, is_admin={$is_admin}, role={$role}");
         
-        // 【要件の判定】
-        // is_admin = 1 または (is_admin = 0 かつ Class_B / Class_K)
-        if ($is_admin === 1 || ($is_admin === 0 && in_array($role, ['Class_B', 'Class_K']))) {
+        // 【最優先】総務部かつ Class_B または Class_K の場合は必ず総務部メニューへ
+        if ($department === '総務部' && in_array($role, ['Class_B', 'Class_K'])) {
+            return redirect('/soumu/menu');
+        }
+
+        // 【条件2】is_admin = 1 の場合（総務部の Class_B/K 以外で管理者権限を持つ人）
+        if ($is_admin === 1) {
             return redirect('/admin/menu');
         }
         
-        // is_admin = 0 かつ Class_NA の場合
+        // 【条件3】総務部のその他の場合（Class_NA など）
+        if ($department === '総務部') {
+            return redirect('/payment/admin');
+        }
+        
+        // 【条件4】is_admin = 0 かつ総務部以外の Class_B / Class_K の場合
+        if ($is_admin === 0 && in_array($role, ['Class_B', 'Class_K'])) {
+            return redirect('/admin/menu');
+        }
+        
+        // 【条件5】一般ユーザー
         return redirect('/attendance');
     }
 
@@ -68,13 +84,50 @@ Route::get('/guide_expense', fn() => view('guide_expense'))->name('guide_expense
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated Routes
+| Authenticated Routes (すべての認証済みユーザー共通)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // 0. ダッシュボード
-    Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', function () {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user) {
+            return redirect('/login');
+        }
+
+        // ユーザー詳細をロード
+        $user->load('detail');
+        $role = optional($user->detail)->role;
+        $department = optional($user->detail)->department;
+        $is_admin = (int)$user->is_admin;
+
+        \Illuminate\Support\Facades\Log::info("ローカルログイン判定: email={$user->email}, dept={$department}, is_admin={$is_admin}, role={$role}");
+
+        // 【最優先】総務部かつ Class_B または Class_K の場合は必ず総務部メニューへ
+        if ($department === '総務部' && in_array($role, ['Class_B', 'Class_K'])) {
+            return redirect('/soumu/menu');
+        }
+
+        // 【条件2】is_admin = 1 の場合
+        if ($is_admin === 1) {
+            return redirect('/admin/menu');
+        }
+        
+        // 【条件3】総務部のその他の場合（Class_NA など）
+        if ($department === '総務部') {
+            return redirect('/payment/admin');
+        }
+        
+        // 【条件4】is_admin = 0 かつ総務部以外の Class_B / Class_K の場合
+        if ($is_admin === 0 && in_array($role, ['Class_B', 'Class_K'])) {
+            return redirect('/admin/menu');
+        }
+        
+        // 【条件5】一般ユーザー
+        return redirect('/attendance');
+    })->name('dashboard');
 
     // 1. 勤怠管理 (Attendance)
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
@@ -99,58 +152,67 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    /*
-    |----------------------------------------------------------------------
-    | 管理者・マネージャー（Class_B, Class_K）専用ルート
-    |----------------------------------------------------------------------
-    */
-    Route::middleware(['auth'])->group(function () {
-        
-        // 管理メニュー画面のアクセスガード
-        Route::get('/admin/menu', function() {
-            $user = Auth::user();
-            $role = optional($user->detail)->role;
-            
-            // is_admin = 1 または (is_admin = 0 かつ Class_B / Class_K) のみ許可
-            $canAccess = $user->is_admin == 1 || ($user->is_admin == 0 && in_array($role, ['Class_B', 'Class_K']));
-            
-            if (!$canAccess) {
-                abort(403, '管理者メニューへのアクセス権限がありません。');
-            }
-            
-            return view('admin.selector');
-        })->name('admin.menu');
-        
-        // 勤怠レポート・自動化
-        Route::get('/admin/monthly-report', [AttendanceController::class, 'adminMonthlyReport'])->name('admin.monthly_report');
-        Route::post('/admin/finalize', [AttendanceController::class, 'finalizeMonth'])->name('admin.finalize');
-        Route::post('/admin/reopen', [AttendanceController::class, 'reopenMonth'])->name('admin.reopen');
-        Route::post('/admin/monthly-report/automate', [AttendanceController::class, 'automateMonth'])->name('admin.monthly.automate');
-        Route::get('/admin/monthly-report/result', [AttendanceController::class, 'showAutomationResult'])->name('admin.monthly.result');
+    // 管理メニュー画面
+    Route::get('/admin/menu', function() {
+        return view('admin.selector');
+    })->name('admin.menu');
 
-        // 勤怠承認ステータスの切り替え
-        Route::post('/admin/attendance/toggle-status/{id}', [AttendanceController::class, 'toggleStatus'])->name('admin.attendance.toggle');
-        
-        // 休暇申請の管理
-        Route::get('/admin/leave-requests', [LeaveApplicationController::class, 'adminIndex'])->name('admin.leave_requests');
-        Route::post('/admin/leave-requests/{leaveApplication}/approve', [LeaveApplicationController::class, 'approve'])->name('admin.leave_approve');
-        Route::post('/admin/leave-requests/{leaveApplication}/reject', [LeaveApplicationController::class, 'reject'])->name('admin.leave_reject');
-        
-        // 経費・ユーザー管理
-        Route::get('/expenses/admin', [ExpenseController::class, 'adminIndex'])->name('expenses.admin');
-        Route::get('/admin/users', [UserDetailController::class, 'adminIndex'])->name('admin.users.index');
-        Route::delete('/admin/users/{user}', [UserDetailController::class, 'destroy'])->name('admin.users.destroy');
-        Route::post('/admin/users/{id}/restore', [UserDetailController::class, 'restore'])->name('admin.users.restore');
-        Route::get('/admin/users/create', [UserDetailController::class, 'create'])->name('admin.users.create');
-        Route::post('/admin/users/store', [UserDetailController::class, 'storeByAdmin'])->name('admin.users.store');
-        
-        // ガイドブック系
-        Route::get('/manual', fn() => Inertia::render('GuideView'))->name('guidebook.show');
-        Route::get('/guidebook', fn() => view('admin.guide.menu'))->name('guidebook.menu');
-        Route::get('/Laravel_React_install', fn() => view('admin.guide.install'))->name('guidebook.install');
-        Route::get('/Basic_detailed_design', fn() => view('admin.guide.design'))->name('guidebook.design');
-        Route::get('/System_construction', fn() => view('admin.guide.construction'))->name('guidebook.construction');
-    });
+    // 総務部専用メニュー画面
+    Route::get('/soumu/menu', function() {
+        $user = Auth::user();
+        $department = optional($user->detail)->department;
+        if ($department !== '総務部' && $user->is_admin != 1) {
+            abort(403, '総務部専用メニューへのアクセス権限がありません。');
+        }
+        return view('soumu.menu');
+    })->name('soumu.menu');
+    
+    // 勤怠レポート・自動化
+    Route::get('/admin/monthly-report', [AttendanceController::class, 'adminMonthlyReport'])->name('admin.monthly_report');
+    Route::post('/admin/finalize', [AttendanceController::class, 'finalizeMonth'])->name('admin.finalize');
+    Route::post('/admin/reopen', [AttendanceController::class, 'reopenMonth'])->name('admin.reopen');
+    Route::post('/admin/monthly-report/automate', [AttendanceController::class, 'automateMonth'])->name('admin.monthly.automate');
+    Route::get('/admin/monthly-report/result', [AttendanceController::class, 'showAutomationResult'])->name('admin.monthly.result');
+
+    // 勤怠承認ステータスの切り替え
+    Route::post('/admin/attendance/toggle-status/{id?}', [AttendanceController::class, 'toggleStatus'])->name('admin.attendance.toggle');
+    Route::post('/admin/attendance/toggle-status-alias/{id?}', [AttendanceController::class, 'toggleStatus'])->name('admin.attendance.toggle-status');
+    
+    // 休暇申請の管理
+    Route::get('/admin/leave-requests', [LeaveApplicationController::class, 'adminIndex'])->name('admin.leave_requests');
+    Route::post('/admin/leave-requests/{leaveApplication}/approve', [LeaveApplicationController::class, 'approve'])->name('admin.leave_approve');
+    Route::post('/admin/leave-requests/{leaveApplication}/reject', [LeaveApplicationController::class, 'reject'])->name('admin.leave_reject');
+    
+    // 経費・ユーザー管理
+    Route::get('/expenses/admin', [ExpenseController::class, 'adminIndex'])->name('expenses.admin');
+    
+    // 支払管理メニュー画面のルート
+    Route::get('/payment/admin', function() {
+        return view('payment.admin');
+    })->name('payment.admin');
+
+    // 給与管理画面のルート
+    Route::get('/payment/payroll', [PayrollController::class, 'index'])->name('payment.payroll');
+
+    // 給与設定画面のルート
+    Route::get('/payment/settings', [PayrollController::class, 'settingsIndex'])->name('payment.settings');
+    Route::post('/payment/settings', [PayrollController::class, 'settingsUpdate'])->name('payment.settings.update');
+
+    // 経費支払管理画面のルート
+    Route::get('/payment/expenses', [ExpenseController::class, 'paymentAdminIndex'])->name('payment.expenses.index');
+
+    Route::get('/admin/users', [UserDetailController::class, 'adminIndex'])->name('admin.users.index');
+    Route::delete('/admin/users/{user}', [UserDetailController::class, 'destroy'])->name('admin.users.destroy');
+    Route::post('/admin/users/{id}/restore', [UserDetailController::class, 'restore'])->name('admin.users.restore');
+    Route::get('/admin/users/create', [UserDetailController::class, 'create'])->name('admin.users.create');
+    Route::post('/admin/users/store', [UserDetailController::class, 'storeByAdmin'])->name('admin.users.store');
+    
+    // ガイドブック系
+    Route::get('/manual', fn() => Inertia::render('GuideView'))->name('guidebook.show');
+    Route::get('/guidebook', fn() => view('admin.guide.menu'))->name('guidebook.menu');
+    Route::get('/Laravel_React_install', fn() => view('admin.guide.install'))->name('guidebook.install');
+    Route::get('/Basic_detailed_design', fn() => view('admin.guide.design'))->name('guidebook.design');
+    Route::get('/System_construction', fn() => view('admin.guide.construction'))->name('guidebook.construction');
 });
 
 require __DIR__ . '/auth.php';
@@ -158,9 +220,7 @@ require __DIR__ . '/auth.php';
 // --- ログアウト処理 ---
 Route::match(['get', 'post'], '/logout', function (Request $request) {
     Auth::guard('web')->logout();
-
     $request->session()->invalidate();
     $request->session()->regenerateToken();
-
     return redirect('/');
 })->name('logout');

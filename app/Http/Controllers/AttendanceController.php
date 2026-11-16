@@ -236,9 +236,14 @@ class AttendanceController extends Controller
 
         if (!$userId || !$month) return back()->with('error', '不正なリクエストです。');
 
+        $updateData = ['is_locked' => $status];
+        if ($status == 1) {
+            $updateData['status'] = '承認済み';
+        }
+
         Attendance::where('user_id', $userId)
             ->where('work_date', 'LIKE', "{$month}%")
-            ->update(['is_locked' => $status]);
+            ->update($updateData);
 
         return back()->with('success', $message);
     }

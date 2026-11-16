@@ -16,14 +16,19 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // 誰の経費か
             $table->date('occured_date');      // 発生日
             $table->string('category');        // 種別（交通費等）
-            $table->string('subcategory');     // 詳細（鉄道等）
+            $table->string('subcategory');     // 詳細（鉄道等)
             $table->string('departure')->nullable();   // 出発地
             $table->string('destination')->nullable(); // 目的地
             $table->string('payee')->nullable();       // 支払先
             $table->integer('amount');         // 金額
             $table->integer('prepaid')->default(0);    // 前払い額
             $table->integer('claim_amount');   // 請求額
-            $table->string('receipt');         // 領収書（あり/なし）
+            $table->string('receipt');         // 領収書（あり/なし
+            
+            // 後から追加されたカラム群を統合
+            $table->tinyInteger('status')->default(0)->comment('0:申請待ち, 1:申請済み, 2:承認済み, 3:却下'); //
+            $table->string('reject_reason')->nullable(); // 却下理由
+
             $table->timestamps();
         });
     }
